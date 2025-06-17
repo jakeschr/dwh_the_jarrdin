@@ -45,7 +45,10 @@ class AuthService {
 	}
 
 	async signin(data, req) {
+		let dbTrx;
 		try {
+			dbTrx = await Connection.transaction();
+
 			const existing = await UserRepository.findExisting({
 				email: data.email,
 			});
@@ -56,7 +59,7 @@ class AuthService {
 				});
 			}
 
-			if (existing.is_active) {
+			if (!existing.is_active) {
 				throw Object.assign(new Error("Your account is inactive"), {
 					code: 400,
 				});
@@ -86,8 +89,11 @@ class AuthService {
 				dbTrx
 			);
 
+			await dbTrx.commit();
+
 			return { message: "Signin successful", session: req.session };
 		} catch (error) {
+			if (dbTrx) await dbTrx.rollback();
 			throw error;
 		}
 	}
