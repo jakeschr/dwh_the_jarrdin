@@ -115,6 +115,8 @@ class UserRepository {
 		try {
 			dbTrx = await this.handleTransaction(dbTrxGlobal);
 
+			data.timestamp = timeHandler.nowEpoch();
+
 			const row = await UserModel.create(data, { transaction: dbTrx });
 
 			if (!dbTrxGlobal) await dbTrx.commit();

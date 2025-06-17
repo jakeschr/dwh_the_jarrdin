@@ -1,10 +1,4 @@
-module.exports = ({
-	GenerateID,
-	Connection,
-	DataTypes,
-	UserModel,
-	JobModel,
-}) => {
+module.exports = ({ GenerateID, Connection, DataTypes }) => {
 	const LogModel = Connection.define(
 		"log",
 		{
@@ -24,7 +18,6 @@ module.exports = ({
 				type: DataTypes.ENUM(
 					"signup",
 					"signin",
-					"signout",
 					"create",
 					"update",
 					"delete",
@@ -44,44 +37,10 @@ module.exports = ({
 			hooks: {
 				beforeCreate: (record) => {
 					record.log_id = GenerateID("log");
-
-					if (record.type === "user" && !record.user_id) {
-						throw new Error("user_id is required when type is 'user'");
-					}
-
-					if (record.type === "job" && !record.job_id) {
-						throw new Error("job_id is required when type is 'job'");
-					}
 				},
 			},
 		}
 	);
-
-	// Relasi dengan User
-	LogModel.belongsTo(UserModel, {
-		foreignKey: "user_id",
-		targetKey: "user_id",
-		onDelete: "RESTRICT",
-		onUpdate: "CASCADE",
-	});
-
-	UserModel.hasMany(LogModel, {
-		foreignKey: "user_id",
-		sourceKey: "user_id",
-	});
-
-	// Relasi dengan Job
-	LogModel.belongsTo(JobModel, {
-		foreignKey: "job_id",
-		targetKey: "job_id",
-		onDelete: "RESTRICT",
-		onUpdate: "CASCADE",
-	});
-
-	JobModel.hasMany(LogModel, {
-		foreignKey: "job_id",
-		sourceKey: "job_id",
-	});
 
 	return LogModel;
 };
