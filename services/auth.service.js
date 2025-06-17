@@ -30,7 +30,7 @@ class AuthService {
 
 			await LogRepository.create(
 				{
-					user_id: createdRow.user_id,
+					user_id: session.user_id,
 					details: {
 						model: "user",
 						ids: createdRow.user_id,

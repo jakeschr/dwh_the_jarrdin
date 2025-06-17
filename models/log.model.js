@@ -12,28 +12,24 @@ module.exports = ({
 				type: DataTypes.STRING(50),
 				primaryKey: true,
 			},
-			user_id: {
+			actor_id: {
 				type: DataTypes.STRING(50),
-				allowNull: true,
-			},
-			job_id: {
-				type: DataTypes.STRING(50),
-				allowNull: true,
-			},
-			message: {
-				type: DataTypes.TEXT,
-				allowNull: true,
+				allowNull: false,
 			},
 			details: {
 				type: DataTypes.JSON,
-				allowNull: true,
-			},
-			action: {
-				type: DataTypes.ENUM("create", "update", "delete", "execute"),
 				allowNull: false,
 			},
-			type: {
-				type: DataTypes.ENUM("user", "job"),
+			action: {
+				type: DataTypes.ENUM(
+					"signup",
+					"signin",
+					"signout",
+					"create",
+					"update",
+					"delete",
+					"execute"
+				),
 				allowNull: false,
 			},
 			timestamp: {
