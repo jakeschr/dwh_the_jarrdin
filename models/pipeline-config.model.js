@@ -1,6 +1,6 @@
 module.exports = ({ Connection, DataTypes, PipelineModel, DatabaseModel }) => {
-	const PipelineDatabaseModel = Connection.define(
-		"pipeline_database",
+	const PipelineConfigModel = Connection.define(
+		"pipeline_config",
 		{
 			pipeline_id: {
 				type: DataTypes.STRING(50),
@@ -24,7 +24,7 @@ module.exports = ({ Connection, DataTypes, PipelineModel, DatabaseModel }) => {
 			},
 		},
 		{
-			tableName: "pipeline_database",
+			tableName: "pipeline_config",
 			timestamps: false,
 			underscored: true,
 			hooks: {
@@ -48,30 +48,30 @@ module.exports = ({ Connection, DataTypes, PipelineModel, DatabaseModel }) => {
 	);
 
 	// Relasi dengan Pipeline
-	PipelineDatabaseModel.belongsTo(PipelineModel, {
+	PipelineConfigModel.belongsTo(PipelineModel, {
 		foreignKey: "pipeline_id",
 		targetKey: "pipeline_id",
 		onDelete: "RESTRICT",
 		onUpdate: "CASCADE",
 	});
 
-	PipelineModel.hasMany(PipelineDatabaseModel, {
+	PipelineModel.hasMany(PipelineConfigModel, {
 		foreignKey: "pipeline_id",
 		sourceKey: "pipeline_id",
 	});
 
 	// Relasi dengan Database
-	PipelineDatabaseModel.belongsTo(DatabaseModel, {
+	PipelineConfigModel.belongsTo(DatabaseModel, {
 		foreignKey: "database_id",
 		targetKey: "database_id",
 		onDelete: "RESTRICT",
 		onUpdate: "CASCADE",
 	});
 
-	DatabaseModel.hasMany(PipelineDatabaseModel, {
+	DatabaseModel.hasMany(PipelineConfigModel, {
 		foreignKey: "database_id",
 		sourceKey: "database_id",
 	});
 
-	return PipelineDatabaseModel;
+	return PipelineConfigModel;
 };

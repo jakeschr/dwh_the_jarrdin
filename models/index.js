@@ -41,8 +41,8 @@ db.PipelineModel = require("./pipeline.model")({
 	DataTypes: DataTypes,
 });
 
-// PipelineDatabase
-db.PipelineDatabaseModel = require("./pipeline-database.model")({
+// PipelineConfig
+db.PipelineConfigModel = require("./pipeline-config.model")({
 	Connection: Connection,
 	DataTypes: DataTypes,
 	PipelineModel: db.PipelineModel,

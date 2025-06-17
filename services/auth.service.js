@@ -2,6 +2,9 @@ const { UserRepository } = require("../repositories/user.repository.js");
 const { LogRepository } = require("../repositories/log.repository");
 const { passwordHandler } = require("../utils/password-handler.util.js");
 
+const { Connection } = require("../models");
+const { timeHandler } = require("../utils/time-handler.util.js");
+
 class AuthService {
 	async signup(data, session) {
 		let dbTrx;
@@ -18,19 +21,23 @@ class AuthService {
 				});
 			}
 
+			const timestamp = timeHandler.nowEpoch();
+
 			data.password = await passwordHandler.encrypt(data.password);
+			data.timestamp = timestamp;
 
 			const createdRow = await UserRepository.create(data, dbTrx);
 
 			await LogRepository.create(
 				{
-					user_id: session.user_id,
+					user_id: createdRow.user_id,
 					details: {
 						model: "user",
 						ids: createdRow.user_id,
 					},
 					action: "create",
 					type: "user",
+					timestamp: timestamp,
 				},
 				dbTrx
 			);
