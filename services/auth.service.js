@@ -1,7 +1,51 @@
 const { UserRepository } = require("../repositories/user.repository.js");
+const { LogRepository } = require("../repositories/log.repository");
 const { passwordHandler } = require("../utils/password-handler.util.js");
 
 class AuthService {
+	async signup(data, session) {
+		let dbTrx;
+		try {
+			dbTrx = await Connection.transaction();
+
+			const existing = await UserRepository.findExisting({
+				email: data.email,
+			});
+
+			if (existing) {
+				throw Object.assign(new Error("User with this email already exists."), {
+					code: 409,
+				});
+			}
+
+			data.password = await passwordHandler.encrypt(data.password);
+
+			const createdRow = await UserRepository.create(data, dbTrx);
+
+			await LogRepository.create(
+				{
+					user_id: session.user_id,
+					details: {
+						model: "user",
+						ids: createdRow.user_id,
+					},
+					action: "create",
+					type: "user",
+				},
+				dbTrx
+			);
+
+			await dbTrx.commit();
+
+			const result = await UserRepository.findOne(createdRow.user_id);
+
+			return result;
+		} catch (error) {
+			if (dbTrx) await dbTrx.rollback();
+			throw error;
+		}
+	}
+
 	async signin(data, req) {
 		try {
 			const existing = await UserRepository.findExisting({

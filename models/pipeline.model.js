@@ -1,28 +1,19 @@
 module.exports = ({ GenerateID, Connection, DataTypes }) => {
-	const UserModel = Connection.define(
-		"user",
+	const PipelineModel = Connection.define(
+		"pipeline",
 		{
-			user_id: {
+			pipeline_id: {
 				type: DataTypes.STRING(50),
 				primaryKey: true,
 			},
 			name: {
-				type: DataTypes.STRING(100),
-				allowNull: false,
-			},
-			email: {
-				type: DataTypes.STRING(200),
+				type: DataTypes.STRING(50),
 				allowNull: false,
 				unique: true,
 			},
-			password: {
+			description: {
 				type: DataTypes.TEXT,
-				allowNull: false,
-			},
-			is_active: {
-				type: DataTypes.BOOLEAN,
-				allowNull: false,
-				defaultValue: true,
+				allowNull: true,
 			},
 			timestamp: {
 				type: DataTypes.BIGINT,
@@ -30,16 +21,20 @@ module.exports = ({ GenerateID, Connection, DataTypes }) => {
 			},
 		},
 		{
-			tableName: "user",
+			tableName: "pipeline",
 			timestamps: false,
 			underscored: true,
 			hooks: {
 				beforeCreate: (record) => {
-					record.user_id = GenerateID("usr");
+					record.pipeline_id = GenerateID("pln");
+					record.timestamp = Date.now();
+				},
+				beforeUpdate: (record) => {
+					record.timestamp = Date.now();
 				},
 			},
 		}
 	);
 
-	return UserModel;
+	return PipelineModel;
 };

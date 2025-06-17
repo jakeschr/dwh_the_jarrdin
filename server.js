@@ -8,7 +8,7 @@ const app = express();
 dotenv.config();
 
 const { Synchronize, ClearSession } = require("./models");
-const { scheduleHandler } = require("./utils/schedule-handler.util");
+// const { scheduleHandler } = require("./utils/schedule-handler.util");
 const { router } = require("./routes");
 const convertQueryParams = require("./middlewares/convert-query-params.middleware");
 const sessionConfig = require("./configs/session.config");

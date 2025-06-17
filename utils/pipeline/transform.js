@@ -1,0 +1,513 @@
+const math = require("mathjs");
+
+function transform({ data, configs, is_preview }) {
+	data.getTableByPath = function (path) {
+		const [scope, table, column] = path.split(".");
+
+		if (!this[scope]) {
+			throw new Error(
+				`Invalid scope: '${scope}' (expected "src', 'dst', or 'rst')`
+			);
+		}
+
+		if (!this[scope][table]) {
+			throw new Error(`Table '${table}' not found in '${scope}'`);
+		}
+
+		const rows = this[scope][table];
+		return rows;
+	};
+
+	for (const config of configs.sort((a, b) => a.order - b.order)) {
+		const {
+			name: alias,
+			transforms: actions,
+			init_source,
+			fields,
+			record_limit = 0,
+		} = config;
+
+		// Ambil data awal
+		data.dst[alias] = data.getTableByPath(init_source);
+
+		try {
+			// Eksekusi setiap action sesuai urutan
+			for (const action of actions.sort((a, b) => a.order - b.order)) {
+				const type = action.type;
+
+				switch (type) {
+					case "map":
+						data.dst[alias] = map({
+							data: data.dst[alias],
+							field: action.field,
+							mapping: action.mapping,
+						});
+						break;
+					case "join":
+						data.dst[alias] = join({
+							left_data: data.getTableByPath(action.left),
+							right_data: data.getTableByPath(action.right),
+							left_key: action.left.split(".").pop(),
+							right_key: action.right.split(".").pop(),
+							join_type: action.join_type,
+						});
+						break;
+					case "filter":
+						data.dst[alias] = filter({
+							data: data.dst[alias],
+							field: action.field,
+							operator: action.operator,
+							value: action.value,
+						});
+						break;
+					case "rename":
+						data.dst[alias] = rename({
+							data: data.dst[alias],
+							rename_from: action.rename_from,
+							rename_to: action.rename_to,
+						});
+
+						break;
+					case "formula":
+						data.dst[alias] = formula({
+							data: data.dst[alias],
+							expression: action.expression,
+							as: action.as,
+						});
+						break;
+					case "aggregate":
+						data.dst[alias] = aggregate({
+							data: data.dst[alias],
+							operation: action.operation,
+							field_target: action.target,
+							field_group_by: action.group_by,
+							as: action.as,
+						});
+						break;
+					default:
+						throw new Error(`Unsupported transform type: ${type}`);
+				}
+			}
+
+			// Bersihkan kolom agar hanya sesuai fields (jika ada)
+			if (fields && Array.isArray(fields)) {
+				data.dst[alias] = (data.dst[alias] || []).map((row) => {
+					const cleaned = {};
+					for (const key of fields) {
+						if (row.hasOwnProperty(key)) {
+							cleaned[key] = row[key];
+						}
+					}
+					return cleaned;
+				});
+			}
+
+			// Tentukan batas limit berdasarkan mode
+			let limit = is_preview ? 100 : record_limit;
+
+			// Batasi jumlah record jika limit > 0
+			if (limit > 0) {
+				data.dst[alias] = (data.dst[alias] || []).slice(0, limit);
+			}
+		} catch (error) {
+			data.dst[alias] = error.message;
+		}
+	}
+	return data.dst;
+}
+
+/**
+ * Melakukan pemetaan nilai dari sebuah field berdasarkan objek mapping yang diberikan.
+ * Cocok untuk konversi nilai seperti kode ke label, status ke teks, dsb.
+ *
+ * Contoh penggunaan:
+ *  map({
+ *    data: [{ status: 1 }, { status: 0 }],
+ *    field: "status",
+ *    mapping: { 1: "Active", 0: "Inactive" },
+ *    as: "status_label"
+ *  })
+ *  // Hasil: [{ status: 1, status_label: "Active" }, { status: 0, status_label: "Inactive" }]
+ *
+ * @param {Object} param0 - Objek parameter.
+ * @param {Array<Object>} param0.data - Data array yang ingin diproses.
+ * @param {string} param0.field - Field path yang nilainya akan dipetakan.
+ * @param {Object} param0.mapping - Objek pemetaan nilai (key: original value, value: mapped value).
+ * @param {string} param0.as - Nama field baru untuk menyimpan hasil pemetaan.
+ * @returns {Array<Object>} - Data dengan field hasil pemetaan.
+ */
+function map({ data = [], field, mapping }) {
+	try {
+		const result = data.map((row) => {
+			// Ambil nilai asli dari field yang ditentukan
+			const rawValue = row[field];
+
+			// Pemetaan berdasarkan nilai asli, default ke null jika tidak ditemukan
+			const mappedValue = mapping[rawValue] ?? null;
+
+			// Kembalikan baris dengan field tambahan hasil pemetaan
+			return {
+				...row,
+				[field]: mappedValue,
+			};
+		});
+
+		// Kembalikan semua data yang sudah dipetakan
+		return result;
+	} catch (error) {
+		throw new Error(`MAP ERROR: ${error}`);
+	}
+}
+
+/**
+ * Melakukan operasi join (inner, left, right, outer) antara dua array of object.
+ *
+ * @param {Object} param0 - Objek parameter.
+ * @param {string} param0.left_key - Path key pada data kiri (bisa nested, misalnya "user.id").
+ * @param {Array<Object>} param0.left_data - Array objek data sisi kiri.
+ * @param {string} param0.right_key - Path key pada data kanan (bisa nested).
+ * @param {Array<Object>} param0.right_data - Array objek data sisi kanan.
+ * @param {string} [param0.join_type="inner"] - Jenis join yang diinginkan: "inner", "left", "right", "outer".
+ * @returns {Array<Object>} - Hasil array join dari kedua data.
+ */
+function join({
+	left_data = [],
+	right_data = [],
+	left_key,
+	right_key,
+	join_type = "inner",
+}) {
+	/**
+	 * Menggabungkan dua objek (baris data) dari hasil join, dengan penanganan konflik key.
+	 *
+	 * Jika ada key yang sama antara left_row dan right_row, maka key dari right_row
+	 * akan ditambahkan prefix "right_" agar tidak menimpa data dari left_row.
+	 *
+	 * Contoh:
+	 *    left_row: { id: 1, name: "A" }
+	 *    right_row: { id: 2, price: 100 }
+	 *    hasil: { id: 1, name: "A", right_id: 2, price: 100 }
+	 *
+	 * @param {Object} left_row - Objek baris dari data kiri (bisa kosong/null).
+	 * @param {Object} right_row - Objek baris dari data kanan (bisa kosong/null).
+	 * @returns {Object} Objek hasil penggabungan yang aman dari konflik key.
+	 */
+	const mergeRowsSafely = (left_row = {}, right_row = {}) => {
+		const merged = {};
+		const left_keys = Object.keys(left_row || {});
+		const right_keys = Object.keys(right_row || {});
+
+		// Salin semua key dari left_row ke merged
+		for (const key of left_keys) {
+			merged[key] = left_row[key];
+		}
+
+		// Salin semua key dari right_row, dengan prefix jika terjadi konflik
+		for (const key of right_keys) {
+			if (merged.hasOwnProperty(key)) {
+				// Jika key sudah ada dari left_row, beri prefix "right_"
+				merged[`right_${key}`] = right_row[key];
+			} else {
+				merged[key] = right_row[key];
+			}
+		}
+
+		return merged;
+	};
+
+	/**
+	 * Mengambil nilai dari sebuah objek menggunakan path bertingkat (dot notation).
+	 *
+	 * Contoh:
+	 *    const obj = { user: { profile: { name: "John" } } };
+	 *    getByPath(obj, "user.profile.name") // Hasil: "John"
+	 *
+	 * @param {Object} obj - Objek yang ingin diakses nilainya.
+	 * @param {string} path - Path string yang menunjukkan lokasi properti, dipisahkan dengan titik (misalnya "user.id").
+	 * @returns {*} Nilai dari path yang diberikan, atau undefined jika tidak ditemukan.
+	 */
+	const getByPath = (obj, path) => {
+		if (!path) return undefined;
+
+		// Pisahkan path menjadi array berdasarkan titik, lalu navigasi ke dalam objek secara bertingkat
+		return path.split(".").reduce((o, k) => (o || {})[k], obj);
+	};
+
+	try {
+		// Validasi tipe join
+		if (!["inner", "left", "right", "outer"].includes(join_type)) {
+			throw new Error(
+				`Invalid join type '${join_type}'. Must be one of: ${[
+					"inner",
+					"left",
+					"right",
+					"outer",
+				].join(", ")}`
+			);
+		}
+
+		// Menampung hasil akhir join
+		const result = [];
+		// Menyimpan index data kanan yang sudah matched (untuk keperluan right/outer join)
+		const matched_right_indices = new Set();
+
+		// Iterasi setiap data dari sisi kiri
+		for (const left_row of left_data) {
+			const left_val = getByPath(left_row, left_key);
+			let match_found = false;
+
+			// Coba cari kecocokan di right_data
+			right_data.forEach((right_row, index) => {
+				const right_val = getByPath(right_row, right_key);
+
+				// Jika nilai cocok dan tidak undefined, gabungkan baris
+				if (
+					left_val === right_val &&
+					left_val !== undefined &&
+					right_val !== undefined
+				) {
+					result.push(mergeRowsSafely(left_row, right_row));
+					matched_right_indices.add(index);
+					match_found = true;
+				}
+			});
+
+			// Jika tidak ada kecocokan dan tipe join adalah left atau outer, masukkan left_row dengan null di right
+			if (!match_found && (join_type === "left" || join_type === "outer")) {
+				result.push(mergeRowsSafely(left_row, null));
+			}
+		}
+
+		// Jika tipe join adalah right atau outer, tambahkan baris dari right_data yang belum matched
+		if (join_type === "right" || join_type === "outer") {
+			right_data.forEach((right_row, index) => {
+				if (!matched_right_indices.has(index)) {
+					result.push(mergeRowsSafely(null, right_row));
+				}
+			});
+		}
+
+		// Kembalikan hasil join
+		return result;
+	} catch (error) {
+		throw new Error(`JOIN ERROR: ${error}`);
+	}
+}
+
+/**
+ * Menyaring data berdasarkan kondisi logika sederhana, seperti:
+ *   - "age >= 30"
+ *   - "name == 'John'"
+ *   - "price < 100"
+ *
+ * @param {Object} param0 - Objek parameter.
+ * @param {Array<Object>} param0.data - Data yang ingin difilter (array of objects).
+ * @param {string} param0.field - Attribute dari data yang akan di filter.
+ * @param {string} param0.operator - Operator pembanding, nilai valid ['==', '!=', '<=', '>=', '<', '>'].
+ * @param {string} param0.value - Nilai untuk pembanding.
+ * @returns {Array<Object>} - Data hasil filter yang memenuhi kondisi.
+ */
+function filter({ data = [], field, operator, value }) {
+	try {
+		// Lakukan filter terhadap setiap baris data
+		const result = data.filter((row) => {
+			// Ambil nilai kolom berdasarkan path
+			const leftVal = row[field];
+
+			switch (operator) {
+				case "==":
+					return leftVal == value; // Bandingkan longgar (non-strict)
+				case "!=":
+					return leftVal != value;
+				case ">":
+					return leftVal > value;
+				case "<":
+					return leftVal < value;
+				case ">=":
+					return leftVal >= value;
+				case "<=":
+					return leftVal <= value;
+				default:
+					throw new Error(`Unsupported operator: ${operator}`);
+			}
+		});
+
+		// Kembalikan hasil data yang lolos filter
+		return result;
+	} catch (error) {
+		// Lempar kembali error agar bisa ditangani oleh pemanggil
+		throw error;
+	}
+}
+
+/**
+ * Mengubah nama field dalam data (array of objects), dari `rename_from` menjadi `rename_to`.
+ * Mendukung pengambilan data dari nested path, tetapi hanya menghapus key lama jika berada di level satu.
+ *
+ * Contoh penggunaan:
+ *  rename({
+ *    data: [{ name: "John", age: 20 }],
+ *    rename_from: "name",
+ *    rename_to: "full_name"
+ *  })
+ *  // Hasil: [{ full_name: "John", age: 20 }]
+ *
+ * @param {Object} param0 - Parameter konfigurasi.
+ * @param {Array<Object>} param0.data - Array data yang akan dimodifikasi.
+ * @param {string} param0.rename_from - Nama field lama.
+ * @param {string} param0.rename_to - Nama field baru.
+ * @returns {Array<Object>} - Data hasil dengan field yang sudah di-rename.
+ */
+function rename({ data = [], rename_from, rename_to }) {
+	try {
+		const result = data.map((row) => {
+			if (row[rename_to]) {
+				throw new Error(`Attribute ${rename_to} already exist in dst.`);
+			}
+
+			// Ambil nilai dari field lama
+			const value = row[rename_from] || null;
+
+			// Tambahkan field baru dengan nama baru dan isi dari field lama
+			row[rename_to] = value;
+
+			// hapus field lama
+			delete row[rename_from];
+
+			return row;
+		});
+
+		return result;
+	} catch (error) {
+		throw new Error(`ERROR RENAME: ${error}`);
+	}
+}
+
+/**
+ * Menghitung nilai baru berdasarkan ekspresi matematika, dan menambahkannya sebagai kolom baru.
+ *
+ * Contoh:
+ *  formula({
+ *    data: [{ price: 10, qty: 2 }],
+ *    expression: "price * qty",
+ *    as: "total"
+ *  })
+ *  // Hasil: [{ price: 10, qty: 2, total: 20 }]
+ *
+ * @param {Object} param0 - Parameter konfigurasi.
+ * @param {Array<Object>} param0.data - Data yang akan dihitung (array of objects).
+ * @param {string} param0.expression - Ekspresi matematika/logika berbasis nama field.
+ * @param {string} param0.as - Nama kolom baru untuk menyimpan hasil perhitungan.
+ * @returns {Array<Object>} - Data dengan kolom hasil perhitungan.
+ */
+function formula({ data = [], expression, as }) {
+	try {
+		if (!Array.isArray(data)) {
+			throw new Error(`'data' must be an array`);
+		}
+
+		const result = data.map((row) => {
+			// Evaluasi ekspresi matematika/logika berdasarkan isi row menggunakan mathjs
+			const value = math.evaluate(expression, row);
+
+			// Kembalikan objek baru dengan kolom tambahan berisi hasil kalkulasi
+			return {
+				...row,
+				[as]: value,
+			};
+		});
+
+		return result;
+	} catch (error) {
+		console.error(error);
+
+		throw new Error(`FORMULA ERROR: ${error.message}`);
+	}
+}
+
+/**
+ * Melakukan agregasi data berdasarkan kolom tertentu (group_by),
+ * dan menerapkan operasi agregasi seperti sum, count, avg, max, min.
+ *
+ * Contoh penggunaan:
+ *  aggregate({
+ *    data: [...],
+ *    operation: "sum",
+ *    field_target: "price",
+ *    field_group_by: "category",
+ *    as: "total_price"
+ *  })
+ *
+ * @param {Object} param0 - Parameter konfigurasi agregasi.
+ * @param {Array<Object>} param0.data - Data array yang ingin diagregasi.
+ * @param {string} param0.operation - Operasi agregasi: "sum", "count", "avg", "max", "min".
+ * @param {string} param0.field_target - Attribute yang akan di aggregasi (tidak diperlukan untuk "count").
+ * @param {string} param0.field_group_by - Attribute yang akan digunakan untuk pengelompokan (grouping).
+ * @param {string} param0.as - Nama kolom hasil agregasi dalam output.
+ * @returns {Array<Object>} - Array berisi hasil agregasi per grup.
+ */
+function aggregate({ data = [], operation, field_target, field_group_by, as }) {
+	try {
+		if (!["sum", "count", "avg", "max", "min"].includes(operation)) {
+			throw new Error(
+				`Unsupported operation '${operation}'. Must be one of: sum, count, avg, max, min`
+			);
+		}
+
+		// Kelompokkan data berdasarkan field_group_by
+		const groups = data.reduce((acc, row) => {
+			const key = row[field_group_by];
+			if (!acc[key]) acc[key] = [];
+			acc[key].push(row);
+			return acc;
+		}, {});
+
+		// Proses setiap grup dengan map
+		const result = Object.entries(groups).map(([groupKey, rows]) => {
+			let value;
+
+			switch (operation) {
+				case "sum":
+					value = rows.reduce(
+						(acc, row) => acc + (parseFloat(row[field_target]) || 0),
+						0
+					);
+					break;
+				case "count":
+					value = rows.length;
+					break;
+				case "avg":
+					value =
+						rows.reduce(
+							(acc, row) => acc + (parseFloat(row[field_target]) || 0),
+							0
+						) / rows.length;
+					break;
+				case "max":
+					value = Math.max(
+						...rows.map((row) => parseFloat(row[field_target]) || 0)
+					);
+					break;
+				case "min":
+					value = Math.min(
+						...rows.map((row) => parseFloat(row[field_target]) || 0)
+					);
+					break;
+			}
+
+			// Ambil data dasar dari baris pertama dalam grup
+			const base = { ...rows[0] };
+
+			// Buat field agregat baru
+			base[as] = value;
+
+			return base;
+		});
+
+		return result;
+	} catch (error) {
+		throw new Error(`AGGREGATE ERROR: ${error.message}`);
+	}
+}
+
+module.exports = { transform };

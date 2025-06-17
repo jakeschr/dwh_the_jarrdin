@@ -1,34 +1,6 @@
 const Joi = require("joi");
 
 const userSchema = {
-	signin(data) {
-		const schema = Joi.object({
-			email: Joi.string()
-				.email({ tlds: { allow: false } })
-				.max(100)
-				.required()
-				.messages({
-					"string.base": `'email' must be a string.`,
-					"string.email": `please enter a valid 'email' address.`,
-					"string.max": `'email' must not exceed 100 characters.`,
-					"any.required": `'email' is required.`,
-				}),
-			password: Joi.string().min(8).max(50).required().messages({
-				"string.base": `'password' must be a string.`,
-				"string.min": `'password' must be at least 8 characters long.`,
-				"string.max": `'password' must not exceed 50 characters.`,
-				"any.required": `'password' is required.`,
-			}),
-		})
-			.required()
-			.messages({
-				"object.base": `request body must be a valid JSON object.`,
-				"any.required": `request body is required.`,
-			});
-
-		return schema.validate(data, { abortEarly: false });
-	},
-
 	filterUser(data) {
 		const schema = Joi.object({
 			user_id: Joi.string().max(50).messages({
@@ -71,7 +43,7 @@ const userSchema = {
 		return schema.validate(data, { abortEarly: false });
 	},
 
-	createUser(data) {
+	signup(data) {
 		const schema = Joi.object({
 			name: Joi.string().min(3).max(100).required().messages({
 				"string.base": `'name' must be a string.`,
@@ -95,10 +67,33 @@ const userSchema = {
 				"string.max": `'password' must not exceed 50 characters.`,
 				"any.required": `'password' is required.`,
 			}),
-			role: Joi.string().valid("admin", "staff").required().messages({
-				"string.base": `'role' must be a string.`,
-				"any.only": `'role' must be either 'admin' or 'staff'.`,
-				"any.required": `'role' is required.`,
+		})
+			.required()
+			.messages({
+				"object.base": `request body must be a valid JSON object.`,
+				"any.required": `request body is required.`,
+			});
+
+		return schema.validate(data, { abortEarly: false });
+	},
+
+	signin(data) {
+		const schema = Joi.object({
+			email: Joi.string()
+				.email({ tlds: { allow: false } })
+				.max(100)
+				.required()
+				.messages({
+					"string.base": `'email' must be a string.`,
+					"string.email": `please enter a valid 'email' address.`,
+					"string.max": `'email' must not exceed 100 characters.`,
+					"any.required": `'email' is required.`,
+				}),
+			password: Joi.string().min(8).max(50).required().messages({
+				"string.base": `'password' must be a string.`,
+				"string.min": `'password' must be at least 8 characters long.`,
+				"string.max": `'password' must not exceed 50 characters.`,
+				"any.required": `'password' is required.`,
 			}),
 		})
 			.required()

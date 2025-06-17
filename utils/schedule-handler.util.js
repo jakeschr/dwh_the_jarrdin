@@ -1,7 +1,7 @@
 const schedule = require("node-schedule");
 const { JobRepository } = require("../repositories/job.repository.js");
 const { LogRepository } = require("../repositories/log.repository.js");
-const { runETL } = require("./pipeline/run-etl.js");
+const { pipeline } = require("./pipeline/pipeline.js");
 const { timeHandler } = require("./time-handler.util.js");
 
 const scheduleHandler = {
@@ -27,7 +27,7 @@ const scheduleHandler = {
 
 					let etlResult;
 					try {
-						etlResult = await runETL(dataJob);
+						etlResult = await pipeline(dataJob);
 					} catch (etlError) {
 						console.error(`SCHEDULER ERROR: job[${job_id}]:`, error);
 
