@@ -27,44 +27,44 @@ db.UserModel = require("./user.model")({
 	DataTypes: DataTypes,
 });
 
-// Database
-db.DatabaseModel = require("./database.model")({
-	GenerateID: GenerateID,
-	Connection: Connection,
-	DataTypes: DataTypes,
-});
+// // Database
+// db.DatabaseModel = require("./database.model")({
+// 	GenerateID: GenerateID,
+// 	Connection: Connection,
+// 	DataTypes: DataTypes,
+// });
 
-// Pipeline
-db.PipelineModel = require("./pipeline.model")({
-	GenerateID: GenerateID,
-	Connection: Connection,
-	DataTypes: DataTypes,
-});
+// // Pipeline
+// db.PipelineModel = require("./pipeline.model")({
+// 	GenerateID: GenerateID,
+// 	Connection: Connection,
+// 	DataTypes: DataTypes,
+// });
 
-// PipelineDatabase
-db.PipelineDatabaseModel = require("./pipeline-database.model")({
-	Connection: Connection,
-	DataTypes: DataTypes,
-	PipelineModel: db.PipelineModel,
-	DatabaseModel: db.DatabaseModel,
-});
+// // PipelineDatabase
+// db.PipelineDatabaseModel = require("./pipeline-database.model")({
+// 	Connection: Connection,
+// 	DataTypes: DataTypes,
+// 	PipelineModel: db.PipelineModel,
+// 	DatabaseModel: db.DatabaseModel,
+// });
 
-// Job
-db.JobModel = require("./job.model")({
-	GenerateID: GenerateID,
-	Connection: Connection,
-	DataTypes: DataTypes,
-	PipelineModel: db.PipelineModel,
-});
+// // Job
+// db.JobModel = require("./job.model")({
+// 	GenerateID: GenerateID,
+// 	Connection: Connection,
+// 	DataTypes: DataTypes,
+// 	PipelineModel: db.PipelineModel,
+// });
 
-// Log
-db.LogModel = require("./log.model")({
-	GenerateID: GenerateID,
-	Connection: Connection,
-	DataTypes: DataTypes,
-	UserModel: db.UserModel,
-	JobModel: db.JobModel,
-});
+// // Log
+// db.LogModel = require("./log.model")({
+// 	GenerateID: GenerateID,
+// 	Connection: Connection,
+// 	DataTypes: DataTypes,
+// 	UserModel: db.UserModel,
+// 	JobModel: db.JobModel,
+// });
 
 // ##################################################################################################################################
 // ##################################################################################################################################
