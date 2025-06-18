@@ -61,18 +61,18 @@ const databaseSchema = {
 				"string.max": `'host' must not exceed 255 characters.`,
 				"any.required": `'host' is required.`,
 			}),
-			port: Joi.number().integer().min(1).required().messages({
+			port: Joi.number().integer().min(1).allow(null).optional().messages({
 				"number.base": `'port' must be a number.`,
 				"number.integer": `'port' must be an integer.`,
 				"number.min": `'port' must be greater than 0.`,
 				"any.required": `'port' is required.`,
 			}),
-			username: Joi.string().max(100).required().messages({
+			username: Joi.string().max(100).allow(null).optional().messages({
 				"string.base": `'username' must be a string.`,
 				"string.max": `'username' must not exceed 100 characters.`,
 				"any.required": `'username' is required.`,
 			}),
-			password: Joi.string().required().messages({
+			password: Joi.string().allow(null).optional().messages({
 				"string.base": `'password' must be a string.`,
 				"any.required": `'password' is required.`,
 			}),
@@ -116,16 +116,16 @@ const databaseSchema = {
 				"string.base": `'host' must be a string.`,
 				"string.max": `'host' must not exceed 255 characters.`,
 			}),
-			port: Joi.number().integer().min(1).optional().messages({
+			port: Joi.number().integer().min(1).allow(null).optional().messages({
 				"number.base": `'port' must be a number.`,
 				"number.integer": `'port' must be an integer.`,
 				"number.min": `'port' must be greater than 0.`,
 			}),
-			username: Joi.string().max(100).optional().messages({
+			username: Joi.string().max(100).allow(null).optional().messages({
 				"string.base": `'username' must be a string.`,
 				"string.max": `'username' must not exceed 100 characters.`,
 			}),
-			password: Joi.string().optional().messages({
+			password: Joi.string().allow(null).optional().messages({
 				"string.base": `'password' must be a string.`,
 			}),
 			schema: Joi.string().max(100).allow(null).optional().messages({

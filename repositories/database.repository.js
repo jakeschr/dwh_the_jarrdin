@@ -68,7 +68,7 @@ class DatabaseRepository {
 					database_id: row.database_id,
 					database: row.database,
 					username: row.username,
-					password: row.password,
+					password_saved: row.password ? true : false,
 					dialect: row.dialect,
 					host: row.host,
 					port: row.port,
@@ -81,6 +81,24 @@ class DatabaseRepository {
 			};
 
 			return formatResult(row);
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	async findForConnection(databaseId) {
+		try {
+			const row = await DatabaseModel.findOne({
+				where: { database_id: databaseId },
+			});
+
+			if (!row) {
+				throw Object.assign(new Error("Database not found."), {
+					code: 404,
+				});
+			}
+
+			return row;
 		} catch (error) {
 			throw error;
 		}

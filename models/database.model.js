@@ -20,15 +20,15 @@ module.exports = ({ GenerateID, Connection, DataTypes }) => {
 			},
 			port: {
 				type: DataTypes.INTEGER,
-				allowNull: false,
+				allowNull: true,
 			},
 			username: {
 				type: DataTypes.STRING(100),
-				allowNull: false,
+				allowNull: true,
 			},
 			password: {
 				type: DataTypes.TEXT,
-				allowNull: false,
+				allowNull: true,
 			},
 			schema: {
 				type: DataTypes.STRING(100),
