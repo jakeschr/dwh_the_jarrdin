@@ -1,7 +1,12 @@
-const { Connection, Sequelize, Op, UserModel } = require("../models");
+const {
+	Connection,
+	Sequelize,
+	Op,
+	DatabaseModel,
+} = require("../models/index.js");
 const { timeHandler } = require("../utils/time-handler.util.js");
 
-class UserRepository {
+class DatabaseRepository {
 	async handleTransaction(dbTrxGlobal) {
 		if (dbTrxGlobal) {
 			return dbTrxGlobal;
@@ -13,33 +18,22 @@ class UserRepository {
 		try {
 			const options = {
 				where: filters,
-			};
-
-			const formatResult = (rows) => {
-				return rows.map((item) => {
-					return {
-						user_id: item.user_id,
-						name: item.name,
-						email: item.email,
-						role: item.role,
-						is_active: item.is_active,
-					};
-				});
+				attributes: ["database_id", "database", "dialect", "host", "is_active"],
 			};
 
 			if (pagination) {
 				const { page, limit } = pagination;
 				const offset = (page - 1) * limit;
 
-				const count = await UserModel.count({ where: filters });
+				const count = await DatabaseModel.count({ where: filters });
 
 				options.limit = limit;
 				options.offset = offset;
 
-				const rows = await UserModel.findAll(options);
+				const rows = await DatabaseModel.findAll(options);
 
 				return {
-					data: formatResult(rows),
+					data: rows,
 					meta: {
 						total_record: count,
 						current_page: page,
@@ -48,63 +42,45 @@ class UserRepository {
 					},
 				};
 			} else {
-				const rows = await UserModel.findAll(options);
+				const rows = await DatabaseModel.findAll(options);
 
-				return { data: formatResult(rows), meta: null };
+				return { data: rows, meta: null };
 			}
 		} catch (error) {
 			throw error;
 		}
 	}
 
-	async findOne(userId) {
+	async findOne(databaseId) {
 		try {
-			const row = await UserModel.findOne({
-				where: { user_id: userId },
+			const row = await DatabaseModel.findOne({
+				where: { database_id: databaseId },
 			});
 
 			if (!row) {
-				throw Object.assign(new Error("user not found."), {
+				throw Object.assign(new Error("Database not found."), {
 					code: 404,
 				});
 			}
 
 			const formatResult = (row) => {
 				return {
-					user_id: row.user_id,
-					name: row.name,
-					email: row.email,
-					role: row.role,
+					database_id: row.database_id,
+					database: row.database,
+					dialect: row.dialect,
+					host: row.host,
+					port: row.port,
+					username: row.username,
+					password: row.password,
+					schema: row.schema,
+					connection_uri: row.connection_uri,
+					options: JSON.parse(row.options),
 					is_active: row.is_active,
 					timestamp: timeHandler.epochToString(row.timestamp),
 				};
 			};
 
 			return formatResult(row);
-		} catch (error) {
-			throw error;
-		}
-	}
-
-	async findExisting(filters) {
-		try {
-			const row = await UserModel.findOne({
-				where: filters,
-			});
-
-			const formatResult = (row) => {
-				return {
-					user_id: row.user_id,
-					name: row.name,
-					email: row.email,
-					role: row.role,
-					password: row.password,
-					is_active: row.is_active,
-					timestamp: timeHandler.epochToString(row.timestamp),
-				};
-			};
-
-			return row ? formatResult(row) : null;
 		} catch (error) {
 			throw error;
 		}
@@ -117,7 +93,7 @@ class UserRepository {
 
 			data.timestamp = timeHandler.nowEpoch();
 
-			const row = await UserModel.create(data, { transaction: dbTrx });
+			const row = await DatabaseModel.create(data, { transaction: dbTrx });
 
 			if (!dbTrxGlobal) await dbTrx.commit();
 
@@ -140,17 +116,17 @@ class UserRepository {
 
 			data.timestamp = timeHandler.nowEpoch();
 
-			const { user_id, ...user } = data;
+			const { database_id, ...database } = data;
 
-			const row = await UserModel.findByPk(user_id);
+			const row = await DatabaseModel.findByPk(database_id);
 
 			if (!row) {
-				throw Object.assign(new Error("User not found."), {
+				throw Object.assign(new Error("Database not found."), {
 					code: 404,
 				});
 			}
 
-			await row.update(user, { transaction: dbTrx });
+			await row.update(database, { transaction: dbTrx });
 
 			if (!dbTrxGlobal) await dbTrx.commit();
 
@@ -166,13 +142,13 @@ class UserRepository {
 		}
 	}
 
-	async delete(userId, dbTrxGlobal) {
+	async delete(databaseId, dbTrxGlobal) {
 		let dbTrx;
 		try {
 			dbTrx = await this.handleTransaction(dbTrxGlobal);
 
-			const count = await UserModel.destroy({
-				where: { user_id: userId },
+			const count = await DatabaseModel.destroy({
+				where: { database_id: databaseId },
 				transaction: dbTrx,
 			});
 
@@ -186,4 +162,4 @@ class UserRepository {
 	}
 }
 
-module.exports = { UserRepository: new UserRepository() };
+module.exports = { DatabaseRepository: new DatabaseRepository() };
