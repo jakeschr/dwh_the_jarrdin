@@ -92,20 +92,17 @@ class UserService {
 
 			const deletedCount = await UserRepository.delete(data.id, dbTrx);
 
-			if (deletedCount > 0 && data.id !== session.user_id) {
-				await LogRepository.create(
-					{
-						user_id: session.user_id,
-						details: {
-							model: "user",
-							ids: data.id,
-						},
-						action: "delete",
-						type: "user",
+			await LogRepository.create(
+				{
+					actor_id: session.user_id,
+					details: {
+						deleted_count: deletedCount,
+						id: data.id,
 					},
-					dbTrx
-				);
-			}
+					action: "delete",
+				},
+				dbTrx
+			);
 
 			await dbTrx.commit();
 
