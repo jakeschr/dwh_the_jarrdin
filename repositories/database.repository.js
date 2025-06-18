@@ -67,11 +67,11 @@ class DatabaseRepository {
 				return {
 					database_id: row.database_id,
 					database: row.database,
+					username: row.username,
+					password: row.password,
 					dialect: row.dialect,
 					host: row.host,
 					port: row.port,
-					username: row.username,
-					password: row.password,
 					schema: row.schema,
 					connection_uri: row.connection_uri,
 					options: JSON.parse(row.options),

@@ -20,20 +20,14 @@ class LogRepository {
 		try {
 			const options = {
 				where: filters,
+				attributes: ["log_id", "actor_id", "action", "timestamp"],
 			};
 
 			const formatResult = (rows) => {
-				return rows.map((row) => {
-					return {
-						log_id: row.log_id,
-						...(row.type === "user"
-							? { user_id: row.user_id }
-							: { job_id: row.job_id }),
-						action: row.action,
-						type: row.type,
-						timestamp: timeHandler.epochToString(row.timestamp),
-					};
+				rows.forEach((row) => {
+					row.timestamp = timeHandler.epochToString(row.timestamp);
 				});
+				return rows;
 			};
 
 			if (pagination) {
@@ -59,7 +53,10 @@ class LogRepository {
 			} else {
 				const rows = await LogModel.findAll(options);
 
-				return { data: formatResult(rows), meta: null };
+				return {
+					data: formatResult(rows),
+					meta: null,
+				};
 			}
 		} catch (error) {
 			throw error;

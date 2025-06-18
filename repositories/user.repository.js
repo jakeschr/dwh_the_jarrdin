@@ -13,18 +13,7 @@ class UserRepository {
 		try {
 			const options = {
 				where: filters,
-			};
-
-			const formatResult = (rows) => {
-				return rows.map((item) => {
-					return {
-						user_id: item.user_id,
-						name: item.name,
-						email: item.email,
-						role: item.role,
-						is_active: item.is_active,
-					};
-				});
+				attributes: ["user_id", "name", "email", "is_active"],
 			};
 
 			if (pagination) {
@@ -39,7 +28,7 @@ class UserRepository {
 				const rows = await UserModel.findAll(options);
 
 				return {
-					data: formatResult(rows),
+					data: rows,
 					meta: {
 						total_record: count,
 						current_page: page,
@@ -50,7 +39,7 @@ class UserRepository {
 			} else {
 				const rows = await UserModel.findAll(options);
 
-				return { data: formatResult(rows), meta: null };
+				return { data: rows, meta: null };
 			}
 		} catch (error) {
 			throw error;
