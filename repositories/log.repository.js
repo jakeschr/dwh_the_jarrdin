@@ -50,10 +50,10 @@ class LogRepository {
 				return {
 					data: formatResult(rows),
 					meta: {
+						total_record: count,
 						current_page: page,
-						total_pages: Math.ceil(count / limit),
-						page_size: limit,
-						total_records: count,
+						total_page: Math.ceil(count / limit),
+						size_page: limit,
 					},
 				};
 			} else {

@@ -139,6 +139,112 @@ class UserController {
 			});
 		}
 	}
+
+	async signup(req, res) {
+		try {
+			let result;
+			switch (req.params.version) {
+				case "v1":
+					const { error } = Validator.signup(req.body);
+
+					if (error) {
+						throw Object.assign(new Error(error.details[0].message), {
+							code: 400,
+						});
+					}
+
+					result = await UserService.signup(req.body, req.user);
+
+					break;
+				default:
+					throw Object.assign(
+						new Error(`Unsupported endpoint version: ${req.params.version}`),
+						{
+							code: 400,
+						}
+					);
+			}
+
+			responseHandler(res, {
+				code: 200,
+				data: result,
+			});
+		} catch (error) {
+			console.error(error);
+			responseHandler(res, {
+				code: error.code || 500,
+				errors: error.message,
+			});
+		}
+	}
+
+	async signin(req, res) {
+		try {
+			let result;
+			switch (req.params.version) {
+				case "v1":
+					const { error } = Validator.signin(req.body);
+
+					if (error) {
+						throw Object.assign(new Error(error.details[0].message), {
+							code: 400,
+						});
+					}
+
+					result = await UserService.signin(req.body, req);
+
+					break;
+				default:
+					throw Object.assign(
+						new Error(`Unsupported endpoint version: ${req.params.version}`),
+						{
+							code: 400,
+						}
+					);
+			}
+
+			responseHandler(res, {
+				code: 200,
+				data: result,
+			});
+		} catch (error) {
+			console.error(error);
+			responseHandler(res, {
+				code: error.code || 500,
+				errors: error.message,
+			});
+		}
+	}
+
+	async signout(req, res) {
+		try {
+			let result;
+			switch (req.params.version) {
+				case "v1":
+					result = await UserService.signout(req, res);
+
+					break;
+				default:
+					throw Object.assign(
+						new Error(`Unsupported endpoint version: ${req.params.version}`),
+						{
+							code: 400,
+						}
+					);
+			}
+
+			responseHandler(res, {
+				code: 200,
+				data: result,
+			});
+		} catch (error) {
+			console.error(error);
+			responseHandler(res, {
+				code: error.code || 500,
+				errors: error.message,
+			});
+		}
+	}
 }
 
 module.exports = { UserController: new UserController() };
