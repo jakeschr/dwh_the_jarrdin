@@ -2,6 +2,8 @@ const {
 	DatabaseRepository,
 } = require("../repositories/database.repository.js");
 const { LogRepository } = require("../repositories/log.repository.js");
+
+const { passwordHandler } = require("../utils/password-handler.util");
 const { filterHandler } = require("../utils/filter-handler.util.js");
 const { Connection } = require("../models/index.js");
 
@@ -35,12 +37,14 @@ class DatabaseService {
 		try {
 			dbTrx = await Connection.transaction();
 
+			data.password = await passwordHandler.encrypt(data.password);
+
 			const createdRow = await DatabaseRepository.create(data, dbTrx);
 
 			await LogRepository.create(
 				{
 					actor_id: session.user_id,
-					details: updatedRow.dataValues,
+					details: createdRow.dataValues,
 					action: "create",
 				},
 				dbTrx
@@ -48,9 +52,7 @@ class DatabaseService {
 
 			await dbTrx.commit();
 
-			const result = await DatabaseRepository.findOne(
-				createdRow.web_service_id
-			);
+			const result = await DatabaseRepository.findOne(createdRow.database_id);
 
 			return result;
 		} catch (error) {
@@ -63,6 +65,10 @@ class DatabaseService {
 		let dbTrx;
 		try {
 			dbTrx = await Connection.transaction();
+
+			if (data.password) {
+				data.password = await passwordHandler.encrypt(data.password);
+			}
 
 			const updatedRow = await DatabaseRepository.update(data, dbTrx);
 
@@ -77,9 +83,7 @@ class DatabaseService {
 
 			await dbTrx.commit();
 
-			const result = await DatabaseRepository.findOne(
-				updatedRow.web_service_id
-			);
+			const result = await DatabaseRepository.findOne(updatedRow.database_id);
 
 			return result;
 		} catch (error) {

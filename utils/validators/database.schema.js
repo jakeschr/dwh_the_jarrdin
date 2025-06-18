@@ -83,7 +83,7 @@ const databaseSchema = {
 			connection_uri: Joi.string().allow(null).optional().messages({
 				"string.base": `'connection_uri' must be a string.`,
 			}),
-			options: Joi.object().optional().messages({
+			options: Joi.object().allow(null).optional().messages({
 				"object.base": `'options' must be a valid JSON object.`,
 			}),
 		}).messages({
