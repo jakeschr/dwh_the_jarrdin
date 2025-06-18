@@ -6,38 +6,44 @@ module.exports = ({ GenerateID, Connection, DataTypes }) => {
 				type: DataTypes.STRING(50),
 				primaryKey: true,
 			},
-			name: {
+			database: {
 				type: DataTypes.STRING(100),
 				allowNull: false,
 			},
-			description: {
+			dialect: {
+				type: DataTypes.ENUM("mysql", "postgres", "mongodb"),
+				allowNull: false,
+			},
+			host: {
+				type: DataTypes.STRING(255),
+				allowNull: false,
+			},
+			port: {
+				type: DataTypes.INTEGER,
+				allowNull: false,
+			},
+			username: {
+				type: DataTypes.STRING(100),
+				allowNull: false,
+			},
+			password: {
 				type: DataTypes.TEXT,
-				allowNull: true,
-			},
-			base_url: {
-				type: DataTypes.STRING(200),
 				allowNull: false,
 			},
-			headers: {
+			schema: {
+				type: DataTypes.STRING(100),
+				allowNull: true, // hanya untuk postgres
+			},
+			connection_uri: {
+				type: DataTypes.TEXT,
+				allowNull: true, // khusus mongodb jika menggunakan URI
+			},
+			options: {
 				type: DataTypes.JSON,
-				allowNull: false,
-			},
-			auth_key: {
-				type: DataTypes.STRING(200),
-				allowNull: false,
-			},
-			auth_url: {
-				type: DataTypes.STRING(200),
 				allowNull: true,
-			},
-			auth_type: {
-				type: DataTypes.ENUM("bearer", "database_key", "basic"),
-				allowNull: false,
-				defaultValue: "bearer",
 			},
 			is_active: {
 				type: DataTypes.BOOLEAN,
-				allowNull: false,
 				defaultValue: true,
 			},
 			timestamp: {
@@ -51,11 +57,7 @@ module.exports = ({ GenerateID, Connection, DataTypes }) => {
 			underscored: true,
 			hooks: {
 				beforeCreate: (record) => {
-					record.database_id = GenerateID("database");
-					record.timestamp = Date.now();
-				},
-				beforeUpdate: (record) => {
-					record.timestamp = Date.now();
+					record.database_id = GenerateID("dtb");
 				},
 			},
 		}
