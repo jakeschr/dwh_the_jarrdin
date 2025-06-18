@@ -15,13 +15,8 @@ const userSchema = {
 				"string.base": `'email' must be a text.`,
 				"string.max": `'email' must not exceed 100 characters.`,
 			}),
-			role: Joi.string().valid("admin", "staff").optional().messages({
-				"string.base": `'role' must be a string.`,
-				"any.only": `'role' must be either 'admin' or 'staff'.`,
-			}),
-			status: Joi.string().valid("active", "inactive").optional().messages({
-				"string.base": `'status' must be a string.`,
-				"any.only": `'status' must be either 'active' or 'inactive'.`,
+			is_active: Joi.boolean().optional().messages({
+				"string.base": `'is_active' must be a boolean.`,
 			}),
 			page: Joi.number().integer().min(1).optional().messages({
 				"number.base": `'page' must be a number.`,
@@ -126,13 +121,8 @@ const userSchema = {
 					"string.email": `please enter a valid 'email' address.`,
 					"string.max": `'email' must not exceed 100 characters.`,
 				}),
-			role: Joi.string().valid("admin", "staff").optional().messages({
-				"string.base": `'role' must be a string.`,
-				"any.only": `'role' must be either 'admin' or 'staff'.`,
-			}),
-			status: Joi.string().valid("active", "inactive").optional().messages({
-				"string.base": `'status' must be a string.`,
-				"any.only": `'status' must be either 'active' or 'inactive'.`,
+			is_active: Joi.boolean().optional().messages({
+				"string.base": `'is_active' must be a boolean.`,
 			}),
 			password: Joi.object({
 				old: Joi.string().min(8).max(50).required().messages({
@@ -154,7 +144,7 @@ const userSchema = {
 				}),
 		})
 			.required()
-			.or("name", "email", "password", "role", "status")
+			.or("name", "email", "password", "role", "is_active")
 			.messages({
 				"object.base": `request body must be a valid JSON object.`,
 				"any.required": `request body is required.`,

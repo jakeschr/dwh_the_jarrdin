@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const authRoute = require("./auth.route");
-// const userRoute = require("./user.route");
+const userRoute = require("./user.route");
 // const databaseRoute = require("./database.route");
 // const pipelineRoute = require("./pipeline.route");
 // const jobRoute = require("./job.route");
@@ -13,7 +13,7 @@ router.get("/", (req, res) => {
 });
 
 router.use("/", authRoute);
-// router.use("/", userRoute);
+router.use("/", userRoute);
 // router.use("/", databaseRoute);
 // router.use("/", pipelineRoute);
 // router.use("/", jobRoute);
