@@ -48,7 +48,7 @@ class PipelineService {
 				dst_configs: data.destination.configs,
 			};
 
-			const createdRow = await PipelineRepository.create(data, dbTrx);
+			const createdRow = await PipelineRepository.create(pipeline, dbTrx);
 
 			await LogRepository.create(
 				{

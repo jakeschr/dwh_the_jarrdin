@@ -22,7 +22,29 @@ class PipelineRepository {
 			const options = {
 				where: filters,
 				attributes: ["pipeline_id", "name"],
-				raw: true,
+				include: [
+					{
+						model: DatabaseModel,
+						required: true,
+						attributes: ["database_id", "label"],
+						as: "src_db",
+					},
+					{
+						model: DatabaseModel,
+						required: true,
+						attributes: ["database_id", "label"],
+						as: "dst_db",
+					},
+				],
+			};
+
+			const formatResult = (rows) => {
+				return rows.map((pipeline) => ({
+					pipeline_id: pipeline.pipeline_id,
+					name: pipeline.name,
+					source: pipeline.src_db.label,
+					destination: pipeline.dst_db.label,
+				}));
 			};
 
 			if (pagination) {
@@ -37,7 +59,7 @@ class PipelineRepository {
 				const rows = await PipelineModel.findAll(options);
 
 				return {
-					data: rows,
+					data: formatResult(rows),
 					meta: {
 						total_record: count,
 						current_page: page,
@@ -48,7 +70,7 @@ class PipelineRepository {
 			} else {
 				const rows = await PipelineModel.findAll(options);
 
-				return { data: rows, meta: null };
+				return { data: formatResult(rows), meta: null };
 			}
 		} catch (error) {
 			throw error;
@@ -61,15 +83,16 @@ class PipelineRepository {
 				where: { pipeline_id: pipelineId },
 				include: [
 					{
-						model: PipelineConfigModel,
+						model: DatabaseModel,
 						required: true,
-						include: [
-							{
-								model: DatabaseModel,
-								required: true,
-								attributes: ["database_id", "label"],
-							},
-						],
+						attributes: ["database_id", "label"],
+						as: "src_db",
+					},
+					{
+						model: DatabaseModel,
+						required: true,
+						attributes: ["database_id", "label"],
+						as: "dst_db",
 					},
 				],
 			});
@@ -80,25 +103,20 @@ class PipelineRepository {
 				});
 			}
 
-			const formatResult = (pipeline) => {
-				const grouped = { src: [], dst: [] };
-				for (const item of pipeline.pipeline_databases) {
-					const formatted = {
-						database: item.database,
-						configs: JSON.parse(item.configs),
-					};
-
-					if (grouped[item.type]) {
-						grouped[item.type].push(formatted);
-					}
-				}
+			const formatResult = (row) => {
 				return {
-					pipeline_id: pipeline.pipeline_id,
-					name: pipeline.name,
-					description: pipeline.description,
-					sources: grouped.src,
-					destinations: grouped.dst,
-					timestamp: timeHandler.epochToString(pipeline.timestamp),
+					pipeline_id: row.pipeline_id,
+					name: row.name,
+					description: row.description,
+					source: {
+						database: row.src_db,
+						configs: JSON.parse(row.src_configs),
+					},
+					destination: {
+						database: row.dst_db,
+						configs: JSON.parse(row.dst_configs),
+					},
+					timestamp: timeHandler.epochToString(row.timestamp),
 				};
 			};
 
