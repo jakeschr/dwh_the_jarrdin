@@ -6,12 +6,23 @@ module.exports = ({ GenerateID, Connection, DataTypes }) => {
 				type: DataTypes.STRING(50),
 				primaryKey: true,
 			},
+			label: {
+				type: DataTypes.STRING(100),
+				allowNull: true,
+			},
 			database: {
 				type: DataTypes.STRING(100),
 				allowNull: false,
 			},
 			dialect: {
-				type: DataTypes.ENUM("mysql", "postgres", "mongodb"),
+				type: DataTypes.ENUM(
+					"mysql",
+					"postgres",
+					"mongodb",
+					"sqlserver",
+					"sybase",
+					"oracle"
+				),
 				allowNull: false,
 			},
 			host: {
@@ -29,6 +40,15 @@ module.exports = ({ GenerateID, Connection, DataTypes }) => {
 			password: {
 				type: DataTypes.TEXT,
 				allowNull: true,
+			},
+			driver: {
+				type: DataTypes.ENUM("native", "odbc"),
+				allowNull: false,
+				defaultValue: "native", // misalnya MySQL pakai native, Sybase pakai odbc
+			},
+			dsn: {
+				type: DataTypes.STRING(100),
+				allowNull: true, // untuk ODBC DSN Name jika pakai ODBC
 			},
 			schema: {
 				type: DataTypes.STRING(100),
