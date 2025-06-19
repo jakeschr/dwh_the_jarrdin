@@ -8,7 +8,8 @@ module.exports = ({ GenerateID, Connection, DataTypes }) => {
 			},
 			label: {
 				type: DataTypes.STRING(100),
-				allowNull: true,
+				allowNull: false,
+				unique: true,
 			},
 			database: {
 				type: DataTypes.STRING(100),
