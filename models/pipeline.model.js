@@ -43,10 +43,6 @@ module.exports = ({ GenerateID, Connection, DataTypes, DatabaseModel }) => {
 			hooks: {
 				beforeCreate: (record) => {
 					record.pipeline_id = GenerateID("pln");
-					record.timestamp = Date.now();
-				},
-				beforeUpdate: (record) => {
-					record.timestamp = Date.now();
 				},
 			},
 		}
@@ -58,11 +54,28 @@ module.exports = ({ GenerateID, Connection, DataTypes, DatabaseModel }) => {
 		targetKey: "database_id",
 		onDelete: "RESTRICT",
 		onUpdate: "CASCADE",
+		as: "src_db",
 	});
 
 	DatabaseModel.hasMany(PipelineModel, {
 		foreignKey: "src_database_id",
 		sourceKey: "database_id",
+		as: "src_db_pipeline",
+	});
+
+	// Relasi dengan Destination Database
+	PipelineModel.belongsTo(DatabaseModel, {
+		foreignKey: "dst_database_id",
+		targetKey: "database_id",
+		onDelete: "RESTRICT",
+		onUpdate: "CASCADE",
+		as: "dst_db",
+	});
+
+	DatabaseModel.hasMany(PipelineModel, {
+		foreignKey: "dst_database_id",
+		sourceKey: "database_id",
+		as: "dst_db_pipeline",
 	});
 
 	return PipelineModel;
