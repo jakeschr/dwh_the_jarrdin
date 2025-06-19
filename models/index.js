@@ -39,6 +39,7 @@ db.PipelineModel = require("./pipeline.model")({
 	GenerateID: GenerateID,
 	Connection: Connection,
 	DataTypes: DataTypes,
+	DatabaseModel: db.DatabaseModel,
 });
 
 // Job
