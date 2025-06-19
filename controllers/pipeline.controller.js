@@ -153,24 +153,7 @@ class PipelineController {
 			let result;
 			switch (req.params.version) {
 				case "v1":
-					const { error } = Validator.deletePipeline({
-						...req.params,
-						...req.query,
-					});
-
-					if (error) {
-						throw Object.assign(new Error(error.details[0].message), {
-							code: 400,
-						});
-					}
-
-					result = await PipelineService.delete(
-						{
-							...req.params,
-							...req.query,
-						},
-						req.user
-					);
+					result = await PipelineService.delete(req.params, req.user);
 
 					break;
 				default:

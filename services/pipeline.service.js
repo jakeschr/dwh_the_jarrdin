@@ -73,52 +73,23 @@ class PipelineService {
 		try {
 			dbTrx = await Connection.transaction();
 
-			const { sources = [], destinations = [], ...pipeline } = data;
+			const pipeline = {
+				pipeline_id: data.pipeline_id,
+				name: data?.name,
+				description: data?.description,
+				src_database_id: data?.source?.database_id,
+				src_configs: data?.source?.configs,
+				dst_database_id: data?.destination?.database_id,
+				dst_configs: data?.destination?.configs,
+			};
 
-			let logModel = "";
-			let logDatabaseIds = [];
-
-			if (Object.keys(pipeline).length > 1) {
-				await PipelineRepository.update(pipeline, dbTrx);
-				logModel += "pipeline";
-			}
-
-			if (sources.length > 0 || destinations.length > 0) {
-				const nowEpoch = timeHandler.nowEpoch();
-				const databases = [
-					...sources.map((src) => ({
-						...src,
-						pipeline_id: pipeline.pipeline_id,
-						type: "src",
-						timestamp: nowEpoch,
-					})),
-					...destinations.map((dst) => ({
-						...dst,
-						pipeline_id: pipeline.pipeline_id,
-						type: "dst",
-						timestamp: nowEpoch,
-					})),
-				];
-
-				await PipelineRepository.upsertDatabases(databases, dbTrx);
-				logModel +=
-					logModel.length > 0 ? "& pipeline_database" : "pipeline_database";
-				logDatabaseIds = databases.map((database) => database.database_id);
-			}
+			const updatedRow = await PipelineRepository.update(pipeline, dbTrx);
 
 			await LogRepository.create(
 				{
-					user_id: session.user_id,
-					details: {
-						model: logModel,
-						ids: {
-							pipeline: pipeline.pipeline_id,
-							database: logDatabaseIds,
-						},
-					},
+					actor_id: session.user_id,
+					details: updatedRow.dataValues,
 					action: "update",
-					type: "user",
-					timestamp: timeHandler.nowEpoch(),
 				},
 				dbTrx
 			);
@@ -137,40 +108,19 @@ class PipelineService {
 		try {
 			dbTrx = await Connection.transaction();
 
-			const { id: pipeline_id, database_id } = data;
+			const deletedCount = await PipelineRepository.delete(data.id, dbTrx);
 
-			let deletedCount;
-			if (database_id) {
-				deletedCount = await PipelineRepository.deleteDatabase(
-					pipeline_id,
-					database_id,
-					dbTrx
-				);
-			} else {
-				deletedCount = await PipelineRepository.delete(pipeline_id, dbTrx);
-			}
-
-			if (deletedCount > 0) {
-				await LogRepository.create(
-					{
-						user_id: session.user_id,
-						details: {
-							model: database_id
-								? "pipeline & pipeline_database"
-								: "pipeline_database",
-							ids: database_id
-								? {
-										pipeline: pipeline_id,
-										database: database_id,
-								  }
-								: pipeline_id,
-						},
-						action: "delete",
-						type: "user",
+			await LogRepository.create(
+				{
+					actor_id: session.user_id,
+					details: {
+						deleted_count: deletedCount,
+						id: data.id,
 					},
-					dbTrx
-				);
-			}
+					action: "delete",
+				},
+				dbTrx
+			);
 
 			await dbTrx.commit();
 
@@ -198,7 +148,7 @@ class PipelineService {
 				}
 			} else if (action === "preview") {
 				// Parallel fetch untuk semua API preview
-				const [srcDatabases, dstDatabases] = await Promise.all([
+				const [srcPipelines, dstDatabases] = await Promise.all([
 					Promise.all(
 						sources.map(async (src) => ({
 							database: await DatabaseRepository.findForPreview(
