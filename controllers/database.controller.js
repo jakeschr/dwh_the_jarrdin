@@ -178,12 +178,12 @@ class DatabaseController {
 		}
 	}
 
-	async testConnection(req, res) {
+	async connectionTest(req, res) {
 		try {
 			let result;
 			switch (req.params.version) {
 				case "v1":
-					result = await DatabaseService.testConnection(req.params);
+					result = await DatabaseService.connectionTest(req.params);
 
 					break;
 				default:

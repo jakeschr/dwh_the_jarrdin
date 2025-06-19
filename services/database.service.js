@@ -121,7 +121,7 @@ class DatabaseService {
 		}
 	}
 
-	async testConnection(data) {
+	async connectionTest(data) {
 		let connectionObj = null;
 
 		try {

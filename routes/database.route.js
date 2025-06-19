@@ -19,9 +19,9 @@ router.delete(
 );
 
 router.get(
-	"/:version/database/test-connection/:id",
+	"/:version/database/connection-test/:id",
 	authorization,
-	DatabaseController.testConnection
+	DatabaseController.connectionTest
 );
 
 module.exports = router;
