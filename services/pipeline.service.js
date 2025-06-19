@@ -43,7 +43,7 @@ class PipelineService {
 
 			const createdRow = await PipelineRepository.create(pipeline, dbTrx);
 
-			const databases = [
+			const configs = [
 				...sources.map((src) => ({
 					...src,
 					pipeline_id: createdRow.pipeline_id,
@@ -58,21 +58,16 @@ class PipelineService {
 				})),
 			];
 
-			const logDatabaseIds = databases.map((database) => database.database_id);
+			await PipelineRepository.upsertConfig(configs, dbTrx);
 
-			await PipelineRepository.upsertDatabases(databases, dbTrx);
 			await LogRepository.create(
 				{
-					user_id: session.user_id,
+					actor_id: session.user_id,
 					details: {
-						model: "pipeline & pipeline_database",
-						ids: {
-							pipeline: createdRow.pipeline_id,
-							database: logDatabaseIds,
-						},
+						...createdRow.dataValues,
+						configs: configs,
 					},
 					action: "create",
-					type: "user",
 				},
 				dbTrx
 			);

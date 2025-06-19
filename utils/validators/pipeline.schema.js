@@ -1,24 +1,19 @@
 const Joi = require("joi");
 
-const filterSchema = Joi.object({
-	type: Joi.string().valid("dynamic", "static").required().messages({
-		"string.base": `'type' must be a string.`,
-		"any.only": `'type' must be either 'dynamic' or 'static'.`,
-		"any.required": `'type' is required.`,
-	}),
-	fields: Joi.array()
+const filterObj = {
+	columns: Joi.array()
 		.items(
 			Joi.string().max(50).messages({
-				"string.base": `'fields' must contain strings.`,
-				"string.max": `Each item in 'fields' must not exceed 50 characters.`,
+				"string.base": `'columns' must contain strings.`,
+				"string.max": `Each item in 'columns' must not exceed 50 characters.`,
 			})
 		)
 		.min(1)
 		.required()
 		.messages({
-			"array.base": `'fields' must be an array.`,
-			"array.min": `'fields' must contain at least one item.`,
-			"any.required": `'fields' is a required in filters item.`,
+			"array.base": `'columns' must be an array.`,
+			"array.min": `'columns' must contain at least one item.`,
+			"any.required": `'columns' is a required in filters item.`,
 		}),
 	operator: Joi.string()
 		.valid(
@@ -40,7 +35,7 @@ const filterSchema = Joi.object({
 		.required()
 		.messages({
 			"string.base": `'operator' must be a string.`,
-			"any.only": `'operator' must be either "eq", "ne", "gt", "gte", "lt", "lte", "like", "not_like", "in", "not_in", "is", "not", "between", "not_between".`,
+			"any.only": `'operator' must be either 'eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'like', 'not_like', 'in', 'not_in', 'is', 'not', 'between', 'not_between'.`,
 			"any.required": `'operator' is required.`,
 		}),
 	value: Joi.alternatives().conditional("operator", {
@@ -80,11 +75,9 @@ const filterSchema = Joi.object({
 				"alternatives.types": `'value' must be a string, number, boolean, or date.`,
 			}),
 	}),
-}).messages({
-	"object.base": `'transform' item must be an object.`,
-});
+};
 
-const transformSchema = Joi.object({
+const transformObj = {
 	type: Joi.string()
 		.valid("join", "rename", "formula", "map", "filter", "aggregate")
 		.required()
@@ -189,10 +182,10 @@ const transformSchema = Joi.object({
 	}),
 
 	// CASE: filter
-	fields: Joi.when("type", {
+	columns: Joi.when("type", {
 		is: "filter",
 		then: Joi.string().required().messages({
-			"any.required": `'fields' is required when type is 'filter'.`,
+			"any.required": `'columns' is required when type is 'filter'.`,
 		}),
 		otherwise: Joi.forbidden(),
 	}),
@@ -245,10 +238,10 @@ const transformSchema = Joi.object({
 			}),
 		otherwise: Joi.forbidden(),
 	}),
-	target: Joi.when("type", {
+	table: Joi.when("type", {
 		is: "aggregate",
 		then: Joi.string().required().messages({
-			"any.required": `'target' is required when type is 'aggregate'.`,
+			"any.required": `'table' is required when type is 'aggregate'.`,
 		}),
 		otherwise: Joi.forbidden(),
 	}),
@@ -259,69 +252,51 @@ const transformSchema = Joi.object({
 		}),
 		otherwise: Joi.forbidden(),
 	}),
-}).messages({
-	"object.base": `'transform' item must be an object.`,
-});
+};
 
-const srcSchema = Joi.object({
-	api_id: Joi.string().max(50).required().messages({
-		"string.base": `source 'api_id' must be a string.`,
-		"string.max": `source 'api_id' must not exceed 50 characters.`,
-		"any.required": `source 'api_id' is required.`,
+const srcObj = {
+	database_id: Joi.string().max(50).required().messages({
+		"string.base": `source 'database_id' must be a string.`,
+		"string.max": `source 'database_id' must not exceed 50 characters.`,
+		"any.required": `source 'database_id' is required.`,
 	}),
 	configs: Joi.array()
 		.items(
 			Joi.object({
-				target: Joi.string().max(50).required().messages({
-					"string.base": `'target' must be a string.`,
-					"string.max": `'target' must not exceed 50 characters.`,
-					"any.required": `'target' is a required in source item.`,
+				table: Joi.string().max(50).required().messages({
+					"string.base": `'table' must be a string.`,
+					"string.max": `'table' must not exceed 50 characters.`,
+					"any.required": `'table' is a required in source item.`,
 				}),
-				name: Joi.string().max(20).required().messages({
-					"string.base": `'name' must be a string.`,
-					"string.max": `'name' must not exceed 20 characters.`,
-					"any.required": `'name' is a required in source item.`,
-				}),
-				fields: Joi.array()
+				columns: Joi.array()
 					.items(
 						Joi.string().max(50).messages({
-							"string.base": `'fields' must contain strings.`,
-							"string.max": `each item in 'fields' must not exceed 50 characters.`,
+							"string.base": `'columns' must contain strings.`,
+							"string.max": `each item in 'columns' must not exceed 50 characters.`,
 						})
 					)
 					.min(1)
 					.required()
 					.messages({
-						"array.base": `'fields' must be an array.`,
-						"array.min": `'fields' must contain at least one item.`,
-						"any.required": `'fields' is a required in source item.`,
+						"array.base": `'columns' must be an array.`,
+						"array.min": `'columns' must contain at least one item.`,
+						"any.required": `'columns' is a required in source item.`,
 					}),
-				filters: Joi.array().items(filterSchema).min(1).required().messages({
-					"array.base": `'filters' must be an array.`,
-					"array.min": `'filters' must contain at least one item.`,
-					"any.required": `'filters' is a required.`,
-				}),
-				pagination: Joi.object({
-					page: Joi.number().integer().min(1).required().messages({
-						"number.base": `pagination.page must be a number.`,
-						"number.integer": `pagination.page must be an integer.`,
-						"number.min": `pagination.page must be at least 1.`,
-						"any.required": `pagination.page is required.`,
-					}),
-					limit: Joi.number().integer().min(5).max(500).required().messages({
-						"number.base": `pagination.limit must be a number.`,
-						"number.integer": `pagination.limit must be an integer.`,
-						"number.min": `pagination.limit must be at least 5.`,
-						"number.max": `pagination.limit must be at most 500.`,
-						"any.required": `pagination.limit is required.`,
-					}),
-				})
+				filters: Joi.array()
+					.items(
+						Joi.object(filterObj).messages({
+							"object.base": `'filters' items must be an object.`,
+						})
+					)
+					.min(1)
+					.allow(null)
 					.optional()
 					.messages({
-						"object.base": `pagination must be an object.`,
+						"array.base": `'filters' must be an array.`,
+						"array.min": `'filters' must contain at least one item.`,
 					}),
 			}).messages({
-				"object.base": `source 'configs' item must be an object.`,
+				"object.base": `source 'configs' items must be an object.`,
 			})
 		)
 		.min(1)
@@ -331,35 +306,42 @@ const srcSchema = Joi.object({
 			"array.min": `source 'configs' must contain at least one item.`,
 			"any.required": `source 'configs' is a required.`,
 		}),
-}).messages({
-	"object.base": `'sources' item must be an object.`,
-});
+};
 
-const dstSchema = Joi.object({
-	api_id: Joi.string().max(50).required().messages({
-		"string.base": `destination 'api_id' must be a string.`,
-		"string.max": `destination 'api_id' must not exceed 50 characters.`,
-		"any.required": `destination 'api_id' is required.`,
+const dstObj = {
+	database_id: Joi.string().max(50).required().messages({
+		"string.base": `destination 'database_id' must be a string.`,
+		"string.max": `destination 'database_id' must not exceed 50 characters.`,
+		"any.required": `destination 'database_id' is required.`,
 	}),
 	configs: Joi.array()
 		.items(
 			Joi.object({
-				target: Joi.string().max(50).required().messages({
-					"string.base": `'target' in destination item must be a string.`,
-					"string.max": `'target' in destination item must not exceed 50 characters.`,
-					"any.required": `'target' is a required in destination item.`,
+				table: Joi.string().max(50).required().messages({
+					"string.base": `'table' in destination item must be a string.`,
+					"string.max": `'table' in destination item must not exceed 50 characters.`,
+					"any.required": `'table' is a required in destination item.`,
 				}),
-				name: Joi.string().max(50).required().messages({
-					"string.base": `'name' in destination item must be a string.`,
-					"string.max": `'name' in destination item must not exceed 50 characters.`,
-					"any.required": `'name' in destination item is a required.`,
-				}),
-				init_source: Joi.string()
+				columns: Joi.array()
+					.items(
+						Joi.string().max(50).messages({
+							"string.base": `'columns' must contain strings.`,
+							"string.max": `Each item in 'columns' must not exceed 50 characters.`,
+						})
+					)
+					.min(1)
+					.required()
+					.messages({
+						"array.base": `'columns' must be an array.`,
+						"array.min": `'columns' must contain at least one item.`,
+						"any.required": `'columns' is a required in destination item.`,
+					}),
+				init_value: Joi.string()
 					.pattern(/^[a-z]+\.[a-z_]+$/)
 					.required()
 					.messages({
-						"string.pattern.base": `'init_source' must be in format scope.table (e.g. src.invoices).`,
-						"any.required": `'init_source' is required.`,
+						"string.pattern.base": `'init_value' must be in format scope.table (e.g. src.invoice).`,
+						"any.required": `'init_value' is required.`,
 					}),
 				order: Joi.number().integer().min(1).required().messages({
 					"number.base": `'order' in destination item must be a number.`,
@@ -367,110 +349,18 @@ const dstSchema = Joi.object({
 					"number.min": `'order' in destination item must be at least 1.`,
 					"any.required": `'order' in destination item is required.`,
 				}),
-				record_limit: Joi.number()
-					.integer()
-					.min(5)
-					.max(500)
-					.optional()
-					.messages({
-						"number.base": `'record_limit' must be a number.`,
-						"number.integer": `'record_limit' must be an integer.`,
-						"number.min": `'record_limit' must be at least 5.`,
-						"number.max": `'record_limit' must be at most 500.`,
-					}),
-				fields: Joi.array()
+				transforms: Joi.array()
 					.items(
-						Joi.string().max(50).messages({
-							"string.base": `'fields' must contain strings.`,
-							"string.max": `Each item in 'fields' must not exceed 50 characters.`,
+						Joi.object(transformObj).messages({
+							"object.base": `'transforms' items must be an object.`,
 						})
 					)
 					.min(1)
-					.required()
-					.messages({
-						"array.base": `'fields' must be an array.`,
-						"array.min": `'fields' must contain at least one item.`,
-						"any.required": `'fields' is a required in destination item.`,
-					}),
-				index: Joi.object({
-					pk: Joi.string().max(50).required().messages({
-						"string.base": `'pk' must be a string.`,
-						"string.max": `'pk' must not exceed 50 characters.`,
-						"any.required": `'pk' is required.`,
-					}),
-					fk: Joi.array()
-						.allow(null)
-						.items(
-							Joi.object({
-								field: Joi.string().max(50).required().messages({
-									"string.base": `'field' must be a string.`,
-									"string.max": `'field' must not exceed 50 characters.`,
-									"any.required": `'field' is required.`,
-								}),
-								ref: Joi.string().max(50).required().messages({
-									"string.base": `'ref' must be a string.`,
-									"string.max": `'ref' must not exceed 50 characters.`,
-									"any.required": `'ref' is required.`,
-								}),
-								ref_field: Joi.string().max(50).required().messages({
-									"string.base": `'ref_field' must be a string.`,
-									"string.max": `'ref_field' must not exceed 50 characters.`,
-									"any.required": `'ref_field' is required.`,
-								}),
-								on_delete: Joi.string()
-									.valid("CASCADE", "SET NULL", "RESTRICT")
-									.optional()
-									.messages({
-										"string.base": `'on_delete' must be a string.`,
-										"any.only": `'on_delete' must be either 'CASCADE', 'RESTRICT' or 'SET NULL'.`,
-									}),
-								on_update: Joi.string()
-									.valid("CASCADE", "SET NULL", "RESTRICT")
-									.optional()
-									.messages({
-										"string.base": `'on_update' must be a string.`,
-										"any.only": `'on_update' must be either 'CASCADE', 'RESTRICT' or 'SET NULL'.`,
-									}),
-							}).messages({
-								"object.base": `'fk' items must be an object.`,
-							})
-						)
-						.min(1)
-						.required()
-						.messages({
-							"array.base": `'fk' must be an array or null.`,
-							"array.min": `'fk' must contain at least one item.`,
-							"any.required": `'fk' is required.`,
-						}),
-					unique: Joi.array()
-						.allow(null)
-						.items(
-							Joi.string().max(50).messages({
-								"string.base": `'unique' items must be a string.`,
-								"string.max": `'unique' items must not exceed 50 characters.`,
-							})
-						)
-						.min(1)
-						.required()
-						.messages({
-							"array.base": `'unique' must be an array or null.`,
-							"array.min": `'unique' must contain at least one item.`,
-							"any.required": `'unique' is required.`,
-						}),
-				})
-					.required()
-					.messages({
-						"object.base": `'index' must be an object.`,
-						"any.required": `'index' is required.`,
-					}),
-				transforms: Joi.array()
-					.items(transformSchema)
-					.min(1)
-					.required()
+					.allow(null)
+					.optional()
 					.messages({
 						"array.base": `'transforms' must be an array.`,
 						"array.min": `'transforms' must contain at least one item.`,
-						"any.required": `'transforms' is a required.`,
 					}),
 			})
 				.required()
@@ -485,9 +375,7 @@ const dstSchema = Joi.object({
 			"array.min": `destination 'configs' must contain at least one item.`,
 			"any.required": `destination 'configs' is a required.`,
 		}),
-}).messages({
-	"object.base": `'destinations' item must be an object.`,
-});
+};
 
 const pipelineSchema = {
 	filterPipeline(data) {
@@ -527,19 +415,17 @@ const pipelineSchema = {
 				"string.max": `'name' must not exceed 50 characters.`,
 				"any.required": `'name' is required.`,
 			}),
-			description: Joi.string().allow(null, "").max(1000).optional().messages({
-				"string.base": `'description' must be a string.`,
-				"string.max": `'description' must not exceed 1000 characters.`,
+			description: Joi.string().allow(null, "").max(250).optional().messages({
+				"string.base": `'description' must be a string, null or ''.`,
+				"string.max": `'description' must not exceed 250 characters.`,
 			}),
-			sources: Joi.array().items(srcSchema).min(1).required().messages({
-				"array.base": `'sources' must be an array.`,
-				"array.min": `'sources' must contain at least one item.`,
-				"any.required": `'sources' is required.`,
+			source: Joi.object(srcObj).required().messages({
+				"object.base": `'source' must be an object.`,
+				"any.required": `'source' is required.`,
 			}),
-			destinations: Joi.array().items(dstSchema).min(1).required().messages({
-				"array.base": `'destinations' must be an array.`,
-				"array.min": `'destinations' must contain at least one item.`,
-				"any.required": `'destinations' is required.`,
+			destination: Joi.object(dstObj).required().messages({
+				"object.base": `'destination' must be an object.`,
+				"any.required": `'destination' is required.`,
 			}),
 		})
 			.required()
@@ -566,100 +452,19 @@ const pipelineSchema = {
 				"string.base": `'description' must be a string.`,
 				"string.max": `'description' must not exceed 1000 characters.`,
 			}),
-			sources: Joi.array().items(srcSchema).min(1).optional().messages({
-				"array.base": `sources must be an array.`,
-				"array.min": `sources must contain at least one item.`,
+			source: Joi.object(srcObj).optional().messages({
+				"object.base": `'source' must be an object.`,
 			}),
-			destinations: Joi.array().items(dstSchema).min(1).optional().messages({
-				"array.base": `destinations must be an array.`,
-				"array.min": `destinations must contain at least one item.`,
+			destination: Joi.object(dstObj).optional().messages({
+				"object.base": `'destination' must be an object.`,
 			}),
 		})
 			.required()
-			.or("name", "description", "sources", "destinations")
+			.or("name", "description", "source", "destination")
 			.messages({
 				"object.base": `request body must be an object.`,
 				"any.required": `request body is required.`,
-				"object.missing": `'pipeline_id' and at least one of this fields ['name', 'description', 'sources', 'destinations'] must be provided for updates.`,
-			});
-
-		return schema.validate(data, { abortEarly: false });
-	},
-
-	executePipeline(data) {
-		const schema = Joi.object({
-			action: Joi.string()
-				.valid("run", "preview")
-				.required()
-				.messages({
-					"string.base": `'action' must be a string.`,
-					"string.max": `'action' must not exceed 50 characters.`,
-					"any.required": `'action' is required.`,
-				}),
-
-			// EXECUTE RUN
-			pipeline_id: Joi.when(Joi.ref("action"), {
-				is: Joi.valid("run", "generate"),
-				then: Joi.string().max(50).required().messages({
-					"string.base": `'pipeline_id' must be a string.`,
-					"string.max": `'pipeline_id' must not exceed 50 characters.`,
-					"any.required": `'pipeline_id' is required when action 'run' or 'generate'.`,
-				}),
-				otherwise: Joi.forbidden().messages({
-					"any.unknown": `'pipeline_id' is not allowed.`,
-				}),
-			}),
-
-			// EXECUTE PREVIEW
-			sources: Joi.when(Joi.ref("action"), {
-				is: "preview",
-				then: Joi.array().items(srcSchema).min(1).required().messages({
-					"array.base": `sources must be an array.`,
-					"array.min": `sources must contain at least one item.`,
-					"any.required": `sources is required when action 'preview'.`,
-				}),
-				otherwise: Joi.forbidden().messages({
-					"any.unknown": `'sources' is not allowed.`,
-				}),
-			}),
-			destinations: Joi.when(Joi.ref("action"), {
-				is: "preview",
-				then: Joi.array().items(dstSchema).min(1).required().messages({
-					"array.base": `destinations must be an array.`,
-					"array.min": `destinations must contain at least one item.`,
-					"any.required": `destinations is required when action 'preview'.`,
-				}),
-				otherwise: Joi.forbidden().messages({
-					"any.unknown": `'destinations' is not allowed.`,
-				}),
-			}),
-		})
-			.required()
-			.messages({
-				"object.base": `request body must be an object.`,
-				"any.required": `request body is required.`,
-			});
-
-		return schema.validate(data, { abortEarly: false });
-	},
-
-	deletePipeline(data) {
-		const schema = Joi.object({
-			id: Joi.string().max(50).required().messages({
-				"string.base": `'pipeline_id (id)' must be a string.`,
-				"string.max": `'pipeline_id (id)' must not exceed 50 characters.`,
-				"any.required": `'pipeline_id (id)' is required when update.`,
-			}),
-			api_id: Joi.string().max(50).optional().messages({
-				"string.base": `'api_id' must be a string.`,
-				"string.max": `'api_id' must not exceed 50 characters.`,
-				"any.required": `'api_id' is required when update.`,
-			}),
-		})
-			.required()
-			.messages({
-				"object.base": `request body must be an object.`,
-				"any.required": `request params (for pipeline_id) is required.`,
+				"object.missing": `'pipeline_id' and at least one field to update must be provided.`,
 			});
 
 		return schema.validate(data, { abortEarly: false });
