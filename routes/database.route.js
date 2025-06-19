@@ -5,9 +5,23 @@ const { DatabaseController } = require("../controllers/database.controller");
 const router = express.Router();
 
 router.get("/:version/database", authorization, DatabaseController.findSummary);
-router.get("/:version/database/:id", authorization, DatabaseController.findDetail);
+router.get(
+	"/:version/database/:id",
+	authorization,
+	DatabaseController.findDetail
+);
 router.post("/:version/database", authorization, DatabaseController.create);
 router.patch("/:version/database", authorization, DatabaseController.update);
-router.delete("/:version/database/:id", authorization, DatabaseController.delete);
+router.delete(
+	"/:version/database/:id",
+	authorization,
+	DatabaseController.delete
+);
+
+router.get(
+	"/:version/database/test-connection/:id",
+	authorization,
+	DatabaseController.testConnection
+);
 
 module.exports = router;

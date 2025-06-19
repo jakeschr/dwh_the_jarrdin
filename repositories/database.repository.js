@@ -18,7 +18,13 @@ class DatabaseRepository {
 		try {
 			const options = {
 				where: filters,
-				attributes: ["database_id", "database", "dialect", "host", "is_active"],
+				attributes: [
+					"database_id",
+					"label",
+					"database",
+					"dialect",
+					"is_active",
+				],
 			};
 
 			if (pagination) {
@@ -66,12 +72,15 @@ class DatabaseRepository {
 			const formatResult = (row) => {
 				return {
 					database_id: row.database_id,
+					label: row.label,
 					database: row.database,
-					username: row.username,
-					password_saved: row.password ? true : false,
 					dialect: row.dialect,
 					host: row.host,
 					port: row.port,
+					username: row.username,
+					password_saved: row.password ? true : false,
+					driver: row.driver,
+					dsn: row.dsn,
 					schema: row.schema,
 					connection_uri: row.connection_uri,
 					options: JSON.parse(row.options),
@@ -98,7 +107,33 @@ class DatabaseRepository {
 				});
 			}
 
-			return row;
+			if (!row.is_active) {
+				throw Object.assign(new Error(`Database ${row.label} not inactive.`), {
+					code: 400,
+				});
+			}
+
+			const formatResult = (row) => {
+				return {
+					database_id: row.database_id,
+					label: row.label,
+					database: row.database,
+					dialect: row.dialect,
+					host: row.host,
+					port: row.port,
+					username: row.username,
+					password: row.password,
+					driver: row.driver,
+					dsn: row.dsn,
+					schema: row.schema,
+					connection_uri: row.connection_uri,
+					options: JSON.parse(row.options),
+					is_active: row.is_active,
+					timestamp: timeHandler.epochToString(row.timestamp),
+				};
+			};
+
+			return formatResult(row);
 		} catch (error) {
 			throw error;
 		}

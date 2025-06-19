@@ -3,6 +3,7 @@ const {
 } = require("../repositories/database.repository.js");
 const { LogRepository } = require("../repositories/log.repository.js");
 
+const { connectionHandler } = require("../utils/connection-handler.util");
 const { passwordHandler } = require("../utils/password-handler.util");
 const { filterHandler } = require("../utils/filter-handler.util.js");
 const { Connection } = require("../models/index.js");
@@ -37,7 +38,7 @@ class DatabaseService {
 		try {
 			dbTrx = await Connection.transaction();
 
-			data.password = await passwordHandler.encrypt(data.password);
+			data.password = passwordHandler.encryptSymmetric(data.password);
 
 			const createdRow = await DatabaseRepository.create(data, dbTrx);
 
@@ -116,6 +117,78 @@ class DatabaseService {
 			return { deleted_count: deletedCount };
 		} catch (error) {
 			if (dbTrx) await dbTrx.rollback();
+			throw error;
+		}
+	}
+
+	async testConnection(data) {
+		let connectionObj = null;
+
+		try {
+			// Ambil data konfigurasi dari repository
+			const config = await DatabaseRepository.findForConnection(data.id);
+
+			// Dekripsi password jika ada
+			if (config.password) {
+				config.password = passwordHandler.decryptSymmetric(config.password);
+			}
+
+			// Lakukan koneksi
+			connectionObj = await connectionHandler.open(config);
+
+			const { connection, type } = connectionObj;
+
+			let testResult;
+
+			switch (type) {
+				case "mysql":
+					[testResult] = await connection.query("SELECT 1 AS test");
+					break;
+
+				case "postgres":
+					const resPg = await connection.query("SELECT 1 AS test");
+					testResult = resPg.rows;
+					break;
+
+				case "sqlserver":
+					const resSql = await connection.request().query("SELECT 1 AS test");
+					testResult = resSql.recordset;
+					break;
+
+				case "oracle":
+					const resOra = await connection.execute("SELECT 1 AS test FROM DUAL");
+					testResult = resOra.rows;
+					break;
+
+				case "mongodb":
+					const admin = connection.db().admin();
+					const ping = await admin.ping();
+					testResult = [ping];
+					break;
+
+				case "odbc":
+					const resOdbc = await connection.query("SELECT 1 AS test");
+					testResult = resOdbc;
+					break;
+
+				default:
+					throw new Error("Unsupported database type");
+			}
+
+			// Jika berhasil sampai sini, koneksi sukses
+			await connectionHandler.close(connectionObj);
+
+			return {
+				status: "success",
+				message: `Koneksi ke ${config.label} berhasil.`,
+				data: testResult,
+			};
+		} catch (error) {
+			// Jika error, kirim pesan gagal
+			if (connectionObj) {
+				await connectionHandler.close(connectionObj);
+			}
+
 			throw error;
 		}
 	}

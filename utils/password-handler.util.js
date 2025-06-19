@@ -7,8 +7,15 @@ const passwordHandler = {
 		r: 8, // Block size
 		p: 1, // Parallelization factor
 		keylen: 64, // Output key length
-		saltLength: 16, // Default salt length in bytes
+		saltLength: 16, // Salt length in bytes
 	}),
+
+	ENCRYPTION_KEY: crypto.scryptSync(
+		process.env.SECRET_KEY || "default-key",
+		"salt",
+		32
+	), // 256-bit key
+	ENCRYPTION_ALGO: "aes-256-cbc",
 
 	/**
 	 * 🔒 Encrypts a password using Scrypt hashing (Async)
@@ -101,6 +108,33 @@ const passwordHandler = {
 		} catch (error) {
 			throw error;
 		}
+	},
+
+	// 🔐 Encrypt for reversible storage (e.g., db connection passwords)
+	encryptSymmetric(plainText) {
+		const iv = crypto.randomBytes(16);
+		const cipher = crypto.createCipheriv(
+			this.ENCRYPTION_ALGO,
+			this.ENCRYPTION_KEY,
+			iv
+		);
+		let encrypted = cipher.update(plainText, "utf8", "hex");
+		encrypted += cipher.final("hex");
+		return `${iv.toString("hex")}:${encrypted}`;
+	},
+
+	// 🔓 Decrypt symmetric encryption
+	decryptSymmetric(cipherText) {
+		const [ivHex, encryptedHex] = cipherText.split(":");
+		const iv = Buffer.from(ivHex, "hex");
+		const decipher = crypto.createDecipheriv(
+			this.ENCRYPTION_ALGO,
+			this.ENCRYPTION_KEY,
+			iv
+		);
+		let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+		decrypted += decipher.final("utf8");
+		return decrypted;
 	},
 };
 

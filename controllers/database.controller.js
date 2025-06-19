@@ -177,6 +177,36 @@ class DatabaseController {
 			});
 		}
 	}
+
+	async testConnection(req, res) {
+		try {
+			let result;
+			switch (req.params.version) {
+				case "v1":
+					result = await DatabaseService.testConnection(req.params);
+
+					break;
+				default:
+					throw Object.assign(
+						new Error(`Unsupported endpoint version: ${req.params.version}`),
+						{
+							code: 400,
+						}
+					);
+			}
+
+			responseHandler(res, {
+				code: 200,
+				data: result,
+			});
+		} catch (error) {
+			console.error(error);
+			responseHandler(res, {
+				code: error.code || 500,
+				errors: error.message,
+			});
+		}
+	}
 }
 
 module.exports = { DatabaseController: new DatabaseController() };

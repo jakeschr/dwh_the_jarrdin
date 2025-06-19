@@ -73,20 +73,11 @@ const databaseSchema = {
 				"any.only": `'driver' must be either 'native' or 'odbc'.`,
 				"any.required": `'driver' is required.`,
 			}),
-			dsn: Joi.when("driver", {
-				is: "odbc",
-				then: Joi.string().max(100).required().messages({
-					"string.base": `'dsn' must be a string.`,
-					"string.max": `'dsn' must not exceed 100 characters.`,
-					"any.required": `'dsn' is required when driver is 'odbc'.`,
-				}),
-				otherwise: Joi.string().max(100).allow(null).optional().messages({
-					"string.base": `'dsn' must be a string.`,
-					"string.max": `'dsn' must not exceed 100 characters.`,
-				}),
+			dsn: Joi.string().max(100).allow(null).optional().messages({
+				"string.base": `'dsn' must be a string.`,
+				"string.max": `'dsn' must not exceed 100 characters.`,
 			}),
-
-			host: Joi.string().max(255).required().messages({
+			host: Joi.string().max(255).messages({
 				"string.base": `'host' must be a string.`,
 				"string.max": `'host' must not exceed 255 characters.`,
 				"any.required": `'host' is required.`,

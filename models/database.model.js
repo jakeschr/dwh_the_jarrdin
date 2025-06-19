@@ -27,7 +27,7 @@ module.exports = ({ GenerateID, Connection, DataTypes }) => {
 			},
 			host: {
 				type: DataTypes.STRING(255),
-				allowNull: false,
+				allowNull: true,
 			},
 			port: {
 				type: DataTypes.INTEGER,
