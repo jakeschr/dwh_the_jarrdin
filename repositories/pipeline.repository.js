@@ -176,6 +176,8 @@ class PipelineRepository {
 		try {
 			dbTrx = await this.handleTransaction(dbTrxGlobal);
 
+			data.timestamp = timeHandler.nowEpoch();
+
 			const row = await PipelineModel.create(data, {
 				transaction: dbTrx,
 			});
@@ -198,6 +200,8 @@ class PipelineRepository {
 		let dbTrx;
 		try {
 			dbTrx = await this.handleTransaction(dbTrxGlobal);
+
+			data.timestamp = timeHandler.nowEpoch();
 
 			const { pipeline_id, ...pipeline } = data;
 
@@ -249,67 +253,6 @@ class PipelineRepository {
 				throw Object.assign(
 					new Error(
 						"Cannot delete: this pipeline is still used in other records."
-					),
-					{ code: 409 }
-				);
-			}
-
-			throw error;
-		}
-	}
-
-	async upsertConfig(data, dbTrxGlobal) {
-		let dbTrx;
-		try {
-			dbTrx = await this.handleTransaction(dbTrxGlobal);
-
-			const updatedRows = await PipelineConfigModel.bulkCreate(data, {
-				transaction: dbTrx,
-				updateOnDuplicate: ["configs", "type", "timestamp"],
-			});
-
-			if (!dbTrxGlobal) await dbTrx.commit();
-
-			return updatedRows;
-		} catch (error) {
-			if (dbTrx && !dbTrxGlobal) await dbTrx.rollback();
-
-			if (error instanceof Sequelize.UniqueConstraintError) {
-				throw Object.assign(new Error(error.errors[0].message), { code: 400 });
-			}
-
-			throw error;
-		}
-	}
-
-	async deleteConfig(pipelineId, databaseId, dbTrxGlobal) {
-		let dbTrx;
-		try {
-			dbTrx = await this.handleTransaction(dbTrxGlobal);
-
-			const deletedCount = await PipelineConfigModel.destroy(
-				{ where: { pipeline_id: pipelineId, database_id: databaseId } },
-				{
-					transaction: dbTrx,
-				}
-			);
-
-			if (deletedCount === 0) {
-				throw Object.assign(new Error("Pipeline-database not found."), {
-					code: 404,
-				});
-			}
-
-			if (!dbTrxGlobal) await dbTrx.commit();
-
-			return deletedCount;
-		} catch (error) {
-			if (dbTrx && !dbTrxGlobal) await dbTrx.rollback();
-
-			if (error instanceof Sequelize.ForeignKeyConstraintError) {
-				throw Object.assign(
-					new Error(
-						"Cannot delete: this pipeline-database is still used in other records."
 					),
 					{ code: 409 }
 				);

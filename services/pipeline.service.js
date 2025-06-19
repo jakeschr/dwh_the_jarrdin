@@ -39,32 +39,21 @@ class PipelineService {
 		try {
 			dbTrx = await Connection.transaction();
 
+			const pipeline = {
+				name: data.name,
+				description: data.description,
+				src_database_id: data.source.database_id,
+				src_configs: data.source.configs,
+				dst_database_id: data.destination.database_id,
+				dst_configs: data.destination.configs,
+			};
+
 			const createdRow = await PipelineRepository.create(data, dbTrx);
-
-			const configs = [
-				...sources.map((src) => ({
-					...src,
-					pipeline_id: createdRow.pipeline_id,
-					type: "src",
-					timestamp: createdRow.timestamp,
-				})),
-				...destinations.map((dst) => ({
-					...dst,
-					pipeline_id: createdRow.pipeline_id,
-					type: "dst",
-					timestamp: createdRow.timestamp,
-				})),
-			];
-
-			await PipelineRepository.upsertConfig(configs, dbTrx);
 
 			await LogRepository.create(
 				{
 					actor_id: session.user_id,
-					details: {
-						...createdRow.dataValues,
-						configs: configs,
-					},
+					details: createdRow.dataValues,
 					action: "create",
 				},
 				dbTrx
