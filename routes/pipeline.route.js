@@ -30,7 +30,7 @@ router.delete(
 	PipelineController.delete
 );
 
-router.post(
+router.get(
 	"/:version/pipeline/execute",
 	authorization, //
 	PipelineController.execute

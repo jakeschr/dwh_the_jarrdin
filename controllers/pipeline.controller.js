@@ -183,7 +183,7 @@ class PipelineController {
 			let result;
 			switch (req.params.version) {
 				case "v1":
-					const { error } = Validator.executePipeline(req.body);
+					const { error } = Validator.executePipeline(req.query);
 
 					if (error) {
 						throw Object.assign(new Error(error.details[0].message), {

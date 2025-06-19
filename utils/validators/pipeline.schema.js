@@ -469,6 +469,28 @@ const pipelineSchema = {
 
 		return schema.validate(data, { abortEarly: false });
 	},
+
+	executePipeline(data) {
+		const schema = Joi.object({
+			action: Joi.string().valid("run", "preview").required().messages({
+				"string.base": `'action' must be a string.`,
+				"string.max": `'action' must not exceed 50 characters.`,
+				"any.required": `'action' is required.`,
+			}),
+			pipeline_id: Joi.string().max(50).required().messages({
+				"string.base": `'pipeline_id' must be a string.`,
+				"string.max": `'pipeline_id' must not exceed 50 characters.`,
+				"any.required": `'pipeline_id' is required.`,
+			}),
+		})
+			.required()
+			.messages({
+				"object.base": `request query must be an object.`,
+				"any.required": `request query is required.`,
+			});
+
+		return schema.validate(data, { abortEarly: false });
+	},
 };
 
 module.exports = { pipelineSchema };
