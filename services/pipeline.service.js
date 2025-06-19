@@ -39,9 +39,7 @@ class PipelineService {
 		try {
 			dbTrx = await Connection.transaction();
 
-			const { sources, destinations, ...pipeline } = data;
-
-			const createdRow = await PipelineRepository.create(pipeline, dbTrx);
+			const createdRow = await PipelineRepository.create(data, dbTrx);
 
 			const configs = [
 				...sources.map((src) => ({

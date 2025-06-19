@@ -41,14 +41,6 @@ db.PipelineModel = require("./pipeline.model")({
 	DataTypes: DataTypes,
 });
 
-// PipelineConfig
-db.PipelineConfigModel = require("./pipeline-config.model")({
-	Connection: Connection,
-	DataTypes: DataTypes,
-	PipelineModel: db.PipelineModel,
-	DatabaseModel: db.DatabaseModel,
-});
-
 // Job
 db.JobModel = require("./job.model")({
 	GenerateID: GenerateID,
