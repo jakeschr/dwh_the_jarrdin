@@ -141,51 +141,61 @@ class DatabaseService {
 			let tableList;
 
 			switch (type) {
-				case "mysql":
-					[tableList] = await connection.query("SHOW TABLES");
+				case "mysql": {
+					const [rows] = await connection.query("SHOW TABLES");
+					tableList = rows.map((row) => Object.values(row)[0]);
 					break;
+				}
 
-				case "postgres":
+				case "postgres": {
 					const resPg = await connection.query(`
-					SELECT tablename FROM pg_tables
-					WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
-				`);
-					tableList = resPg.rows;
+						SELECT tablename FROM pg_tables
+						WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+					`);
+					tableList = resPg.rows.map((row) => row.tablename);
 					break;
+				}
 
-				case "sqlserver":
+				case "sqlserver": {
 					const resSql = await connection
 						.request()
 						.query(
 							`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`
 						);
-					tableList = resSql.recordset;
+					tableList = resSql.recordset.map((row) => row.TABLE_NAME);
 					break;
+				}
 
-				case "oracle":
+				case "oracle": {
 					const resOra = await connection.execute(
 						`SELECT table_name FROM user_tables`
 					);
-					tableList = resOra.rows.map(([name]) => ({ table_name: name }));
+					tableList = resOra.rows.map(([name]) => name);
 					break;
+				}
 
-				case "mongodb":
+				case "mongodb": {
 					const db = connection.db(); // Get default database
 					const collections = await db.listCollections().toArray();
-					tableList = collections.map((col) => ({ collection_name: col.name }));
+					tableList = collections.map((col) => col.name);
 					break;
+				}
 
-				case "odbc":
-					// Banyak DB ODBC support metadata standard ini:
+				case "odbc": {
 					const resOdbc = await connection.query(`
-					SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'
-				`);
-					tableList = resOdbc;
+						SELECT table_name 
+						FROM systable 
+						WHERE table_type = 'BASE' 
+						  AND creator = USER_ID()
+					`);
+					tableList = resOdbc.map((row) => row.table_name);
 					break;
+				}
 
 				default:
 					throw new Error("Unsupported database type");
 			}
+			
 
 			await connectionHandler.close(connectionObj);
 
