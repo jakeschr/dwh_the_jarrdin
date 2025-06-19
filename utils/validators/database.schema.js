@@ -7,19 +7,27 @@ const databaseSchema = {
 				"string.base": `'database_id' must be a string.`,
 				"string.max": `'database_id' must not exceed 50 characters.`,
 			}),
+			label: Joi.string().max(100).optional().messages({
+				"string.base": `'label' must be a string.`,
+				"string.max": `'label' must not exceed 100 characters.`,
+			}),
 			database: Joi.string().max(100).optional().messages({
 				"string.base": `'database' must be a string.`,
 				"string.max": `'database' must not exceed 100 characters.`,
 			}),
 			dialect: Joi.string()
-				.valid("mysql", "postgres", "mongodb")
+				.valid("mysql", "postgres", "mongodb", "sqlserver", "sybase", "oracle")
 				.optional()
 				.messages({
 					"string.base": `'dialect' must be a string.`,
-					"any.only": `'dialect' must be one of 'mysql', 'postgres', 'mongodb'.`,
+					"any.only": `'dialect' must be one of 'mysql', 'postgres', 'mongodb', 'sqlserver', 'sybase', or 'oracle'.`,
 				}),
+			driver: Joi.string().valid("native", "odbc").optional().messages({
+				"string.base": `'driver' must be a string.`,
+				"any.only": `'driver' must be either 'native' or 'odbc'.`,
+			}),
 			is_active: Joi.boolean().optional().messages({
-				"string.base": `'is_active' must be a boolean.`,
+				"boolean.base": `'is_active' must be a boolean.`,
 			}),
 			page: Joi.number().integer().min(1).optional().messages({
 				"number.base": `'page' must be a number.`,
@@ -43,19 +51,41 @@ const databaseSchema = {
 
 	createDatabase(data) {
 		const schema = Joi.object({
+			label: Joi.string().max(100).allow(null).optional().messages({
+				"string.base": `'label' must be a string.`,
+				"string.max": `'label' must not exceed 100 characters.`,
+			}),
 			database: Joi.string().max(100).required().messages({
 				"string.base": `'database' must be a string.`,
 				"string.max": `'database' must not exceed 100 characters.`,
 				"any.required": `'database' is required.`,
 			}),
 			dialect: Joi.string()
-				.valid("mysql", "postgres", "mongodb")
+				.valid("mysql", "postgres", "mongodb", "sqlserver", "sybase", "oracle")
 				.required()
 				.messages({
 					"string.base": `'dialect' must be a string.`,
-					"any.only": `'dialect' must be one of 'mysql', 'postgres', 'mongodb'.`,
+					"any.only": `'dialect' must be one of 'mysql', 'postgres', 'mongodb', 'sqlserver', 'sybase', or 'oracle'.`,
 					"any.required": `'dialect' is required.`,
 				}),
+			driver: Joi.string().valid("native", "odbc").required().messages({
+				"string.base": `'driver' must be a string.`,
+				"any.only": `'driver' must be either 'native' or 'odbc'.`,
+				"any.required": `'driver' is required.`,
+			}),
+			dsn: Joi.when("driver", {
+				is: "odbc",
+				then: Joi.string().max(100).required().messages({
+					"string.base": `'dsn' must be a string.`,
+					"string.max": `'dsn' must not exceed 100 characters.`,
+					"any.required": `'dsn' is required when driver is 'odbc'.`,
+				}),
+				otherwise: Joi.string().max(100).allow(null).optional().messages({
+					"string.base": `'dsn' must be a string.`,
+					"string.max": `'dsn' must not exceed 100 characters.`,
+				}),
+			}),
+
 			host: Joi.string().max(255).required().messages({
 				"string.base": `'host' must be a string.`,
 				"string.max": `'host' must not exceed 255 characters.`,
@@ -65,16 +95,13 @@ const databaseSchema = {
 				"number.base": `'port' must be a number.`,
 				"number.integer": `'port' must be an integer.`,
 				"number.min": `'port' must be greater than 0.`,
-				"any.required": `'port' is required.`,
 			}),
 			username: Joi.string().max(100).allow(null).optional().messages({
 				"string.base": `'username' must be a string.`,
 				"string.max": `'username' must not exceed 100 characters.`,
-				"any.required": `'username' is required.`,
 			}),
 			password: Joi.string().allow(null).optional().messages({
 				"string.base": `'password' must be a string.`,
-				"any.required": `'password' is required.`,
 			}),
 			schema: Joi.string().max(100).allow(null).optional().messages({
 				"string.base": `'schema' must be a string.`,
@@ -101,17 +128,29 @@ const databaseSchema = {
 				"string.max": `'database_id' must not exceed 50 characters.`,
 				"any.required": `'database_id' is required.`,
 			}),
+			label: Joi.string().max(100).allow(null).optional().messages({
+				"string.base": `'label' must be a string.`,
+				"string.max": `'label' must not exceed 100 characters.`,
+			}),
 			database: Joi.string().max(100).optional().messages({
 				"string.base": `'database' must be a string.`,
 				"string.max": `'database' must not exceed 100 characters.`,
 			}),
 			dialect: Joi.string()
-				.valid("mysql", "postgres", "mongodb")
+				.valid("mysql", "postgres", "mongodb", "sqlserver", "sybase", "oracle")
 				.optional()
 				.messages({
 					"string.base": `'dialect' must be a string.`,
-					"any.only": `'dialect' must be one of 'mysql', 'postgres', 'mongodb'.`,
+					"any.only": `'dialect' must be one of 'mysql', 'postgres', 'mongodb', 'sqlserver', 'sybase', or 'oracle'.`,
 				}),
+			driver: Joi.string().valid("native", "odbc").optional().messages({
+				"string.base": `'driver' must be a string.`,
+				"any.only": `'driver' must be either 'native' or 'odbc'.`,
+			}),
+			dsn: Joi.string().max(100).allow(null).optional().messages({
+				"string.base": `'dsn' must be a string.`,
+				"string.max": `'dsn' must not exceed 100 characters.`,
+			}),
 			host: Joi.string().max(255).optional().messages({
 				"string.base": `'host' must be a string.`,
 				"string.max": `'host' must not exceed 255 characters.`,
@@ -139,13 +178,16 @@ const databaseSchema = {
 				"object.base": `'options' must be a valid JSON object.`,
 			}),
 			is_active: Joi.boolean().optional().messages({
-				"string.base": `'is_active' must be a boolean.`,
+				"boolean.base": `'is_active' must be a boolean.`,
 			}),
 		})
 			.required()
 			.or(
+				"label",
 				"database",
 				"dialect",
+				"driver",
+				"dsn",
 				"host",
 				"port",
 				"username",
@@ -158,7 +200,7 @@ const databaseSchema = {
 			.messages({
 				"object.base": `request body must be a valid JSON object.`,
 				"any.required": `request body is required.`,
-				"object.missing": `'database_id' and at least one of the fields must be provided for update.`,
+				"object.missing": `'database_id' and at least one field to update must be provided.`,
 			});
 
 		return schema.validate(data, { abortEarly: false });
