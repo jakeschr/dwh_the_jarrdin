@@ -51,9 +51,10 @@ const databaseSchema = {
 
 	createDatabase(data) {
 		const schema = Joi.object({
-			label: Joi.string().max(100).allow(null).optional().messages({
+			label: Joi.string().max(100).required().messages({
 				"string.base": `'label' must be a string.`,
 				"string.max": `'label' must not exceed 100 characters.`,
+				"any.required": `'label' is required.`,
 			}),
 			database: Joi.string().max(100).required().messages({
 				"string.base": `'database' must be a string.`,
@@ -77,10 +78,9 @@ const databaseSchema = {
 				"string.base": `'dsn' must be a string.`,
 				"string.max": `'dsn' must not exceed 100 characters.`,
 			}),
-			host: Joi.string().max(255).messages({
+			host: Joi.string().max(255).allow(null).optional().messages({
 				"string.base": `'host' must be a string.`,
 				"string.max": `'host' must not exceed 255 characters.`,
-				"any.required": `'host' is required.`,
 			}),
 			port: Joi.number().integer().min(1).allow(null).optional().messages({
 				"number.base": `'port' must be a number.`,
@@ -142,7 +142,7 @@ const databaseSchema = {
 				"string.base": `'dsn' must be a string.`,
 				"string.max": `'dsn' must not exceed 100 characters.`,
 			}),
-			host: Joi.string().max(255).optional().messages({
+			host: Joi.string().max(255).allow(null).optional().messages({
 				"string.base": `'host' must be a string.`,
 				"string.max": `'host' must not exceed 255 characters.`,
 			}),

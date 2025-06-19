@@ -1,0 +1,14 @@
+{
+	"label": "Sybase Demo Connection",
+	"database": "demo17",
+	"dialect": "sybase",
+	"driver": "odbc",
+	"dsn": "SQL Anywhere 17 Demo",
+	"host": "localhost",
+	"port": null,
+	"username": "DBA",
+	"password": "sql",
+	"schema": null,
+	"connection_uri": null,
+	"options": null
+}
