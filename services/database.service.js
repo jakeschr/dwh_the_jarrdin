@@ -138,50 +138,61 @@ class DatabaseService {
 
 			const { connection, type } = connectionObj;
 
-			let testResult;
+			let tableList;
 
 			switch (type) {
 				case "mysql":
-					[testResult] = await connection.query("SELECT 1 AS test");
+					[tableList] = await connection.query("SHOW TABLES");
 					break;
 
 				case "postgres":
-					const resPg = await connection.query("SELECT 1 AS test");
-					testResult = resPg.rows;
+					const resPg = await connection.query(`
+					SELECT tablename FROM pg_tables
+					WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+				`);
+					tableList = resPg.rows;
 					break;
 
 				case "sqlserver":
-					const resSql = await connection.request().query("SELECT 1 AS test");
-					testResult = resSql.recordset;
+					const resSql = await connection
+						.request()
+						.query(
+							`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`
+						);
+					tableList = resSql.recordset;
 					break;
 
 				case "oracle":
-					const resOra = await connection.execute("SELECT 1 AS test FROM DUAL");
-					testResult = resOra.rows;
+					const resOra = await connection.execute(
+						`SELECT table_name FROM user_tables`
+					);
+					tableList = resOra.rows.map(([name]) => ({ table_name: name }));
 					break;
 
 				case "mongodb":
-					const admin = connection.db().admin();
-					const ping = await admin.ping();
-					testResult = [ping];
+					const db = connection.db(); // Get default database
+					const collections = await db.listCollections().toArray();
+					tableList = collections.map((col) => ({ collection_name: col.name }));
 					break;
 
 				case "odbc":
-					const resOdbc = await connection.query("SELECT 1 AS test");
-					testResult = resOdbc;
+					// Banyak DB ODBC support metadata standard ini:
+					const resOdbc = await connection.query(`
+					SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'
+				`);
+					tableList = resOdbc;
 					break;
 
 				default:
 					throw new Error("Unsupported database type");
 			}
 
-			// Jika berhasil sampai sini, koneksi sukses
 			await connectionHandler.close(connectionObj);
 
 			return {
 				status: "success",
-				message: `Koneksi ke ${config.label} berhasil.`,
-				data: testResult,
+				message: `Berhasil mengambil daftar tabel dari ${config.label}`,
+				data: tableList,
 			};
 		} catch (error) {
 			// Jika error, kirim pesan gagal
