@@ -137,8 +137,6 @@ class PipelineService {
 
 			const pipeline = await PipelineRepository.findForETL(pipeline_id);
 
-			return pipeline
-
 			const resultETL = await runETL({
 				source: pipeline.source,
 				destination: pipeline.destination,
@@ -158,7 +156,7 @@ class PipelineService {
 
 			return {
 				log: resultETL.log,
-				data: resultETL.dst,
+				// data: resultETL.src,
 			};
 		} catch (error) {
 			throw error;
