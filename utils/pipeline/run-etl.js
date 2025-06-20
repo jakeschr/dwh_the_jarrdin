@@ -1,5 +1,5 @@
 const { extract } = require("./extract");
-// const { transform } = require("./transform");
+const { transform } = require("./transform");
 // const { load } = require("./load");
 const { timeHandler } = require("../time-handler.util");
 const { connectionHandler } = require("../connection-handler.util");
@@ -30,13 +30,13 @@ const runETL = async ({
 
 		/////////////////////////////////////////////////////////////////////////////
 		// 1. EXTRACT
-		const result = await extract({
+		const extractedData = await extract({
 			database: source.database,
 			configs: source.configs,
 			time_threshold: time_threshold,
 		});
 
-		for (const [alias, data] of Object.entries(result)) {
+		for (const [alias, data] of Object.entries(extractedData)) {
 			if (Array.isArray(data)) {
 				workingData.src[alias] = data;
 				workingData.log.extract_log.push(
@@ -50,34 +50,32 @@ const runETL = async ({
 			}
 		}
 
-		// /////////////////////////////////////////////////////////////////////////////
-		// // 2. TRANSFORM
-		// for (const destination of destinations) {
-		// 	const result = await transform({
-		// 		configs: destination.configs,
-		// 		data: workingData,
-		// 		is_preview: is_preview,
-		// 	});
+		/////////////////////////////////////////////////////////////////////////////
+		// 2. TRANSFORM
+		const transformedData = await transform({
+			data: workingData,
+			configs: destination.configs,
+			is_preview: is_preview,
+		});
 
-		// 	for (const [alias, data] of Object.entries(result)) {
-		// 		if (Array.isArray(data)) {
-		// 			workingData.dst[alias] = data;
-		// 			workingData.log.transform_log.push(
-		// 				buildLog(alias, "success", data, "transform")
-		// 			);
-		// 		} else {
-		// 			workingData.dst[alias] = [];
-		// 			workingData.log.transform_log.push(
-		// 				buildLog(alias, "error", data, "transform")
-		// 			);
-		// 		}
-		// 	}
-		// }
+		for (const [alias, data] of Object.entries(transformedData)) {
+			if (Array.isArray(data)) {
+				workingData.dst[alias] = data;
+				workingData.log.transform_log.push(
+					buildLog(alias, "success", data, "transform")
+				);
+			} else {
+				workingData.dst[alias] = [];
+				workingData.log.transform_log.push(
+					buildLog(alias, "error", data, "transform")
+				);
+			}
+		}
 
-		// if (is_preview === true) {
-		// 	workingData.log.end_time = timeHandler.nowEpoch();
-		// 	return workingData;
-		// }
+		if (is_preview === true) {
+			workingData.log.end_time = timeHandler.nowEpoch();
+			return workingData;
+		}
 
 		// /////////////////////////////////////////////////////////////////////////////
 		// // 3. LOAD
