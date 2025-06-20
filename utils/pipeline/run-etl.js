@@ -31,16 +31,16 @@ const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 			time_threshold: time_threshold,
 		});
 
-		for (const [alias, data] of Object.entries(extractedData)) {
+		for (const [table, data] of Object.entries(extractedData)) {
 			if (Array.isArray(data)) {
-				workingData.src[alias] = data;
+				workingData.src[table] = data;
 				workingData.log.extract_log.push(
-					buildLog(alias, "success", data, "extract")
+					buildLog(table, "success", data, "extract")
 				);
 			} else {
-				workingData.src[alias] = [];
+				workingData.src[table] = [];
 				workingData.log.extract_log.push(
-					buildLog(alias, "error", data, "extract")
+					buildLog(table, "error", data, "extract")
 				);
 			}
 		}
@@ -53,16 +53,16 @@ const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 			is_preview: is_preview,
 		});
 
-		for (const [alias, data] of Object.entries(transformedData)) {
+		for (const [table, data] of Object.entries(transformedData)) {
 			if (Array.isArray(data)) {
-				workingData.dst[alias] = data;
+				workingData.dst[table] = data;
 				workingData.log.transform_log.push(
-					buildLog(alias, "success", data, "transform")
+					buildLog(table, "success", data, "transform")
 				);
 			} else {
-				workingData.dst[alias] = [];
+				workingData.dst[table] = [];
 				workingData.log.transform_log.push(
-					buildLog(alias, "error", data, "transform")
+					buildLog(table, "error", data, "transform")
 				);
 			}
 		}
@@ -80,12 +80,8 @@ const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 			data: workingData.dst,
 		});
 
-		for (const [alias, data] of Object.entries(loadedData)) {
-			if (Array.isArray(data)) {
-				workingData.log.load_log.push(buildLog(alias, "success", data, "load"));
-			} else {
-				workingData.log.load_log.push(buildLog(alias, "error", data, "load"));
-			}
+		for (const [table, data] of Object.entries(loadedData)) {
+			workingData.log.load_log.push(buildLog(table, "success", data, "load"));
 		}
 
 		workingData.log.end_time = timeHandler.nowEpoch();
@@ -106,13 +102,34 @@ const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 };
 
 function buildLog(name, status, result, type) {
-	const count = Array.isArray(result) ? result.length : 0;
-	return {
-		status: status,
-		name: name,
-		count: count,
-		message: status === "success" ? `${count} records ${type}ed.` : result,
-	};
+	if (type === "load") {
+		if (result.data.length > 0 && result.error.length > 0) {
+			status = "partial";
+		} else if (result.data.length > 0 && result.error.length === 0) {
+			status = "success";
+		} else {
+			status = "error";
+		}
+
+		return {
+			status: status,
+			name: name,
+			count: result.data.length,
+			message:
+				status === "error"
+					? `Error extract data from ${name}`
+					: `${result.data.length} records ${type}ed.`,
+			error: result.error,
+		};
+	} else {
+		const count = Array.isArray(result) ? result.length : 0;
+		return {
+			status: status,
+			name: name,
+			count: count,
+			message: status === "success" ? `${count} records ${type}ed.` : result,
+		};
+	}
 }
 
 module.exports = { runETL };

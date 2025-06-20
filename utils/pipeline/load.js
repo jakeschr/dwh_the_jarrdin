@@ -10,91 +10,147 @@ async function load({ database, configs, data }) {
 		const rows = data[table];
 
 		if (!Array.isArray(rows) || rows.length === 0) {
-			results[table] = [];
+			results[table] = { data: [], error: [] };
 			continue;
 		}
 
 		const batches = splitIntoChunks(rows, BATCH_SIZE);
-		const successfulInserts = [];
+		const loadedData = [];
+		const errors = [];
 
-		for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-			const batch = batches[batchIndex];
-
+		for (const batch of batches) {
 			try {
-				const placeholders = "(" + columns.map(() => "?").join(", ") + ")";
-				const query =
-					`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
-					batch.map(() => placeholders).join(", ");
-				const values = batch.flatMap((row) => columns.map((col) => row[col]));
-
-				switch (type) {
-					case "mysql-native":
-					case "mysql-odbc":
-					case "postgres-native":
-					case "postgres-odbc":
-					case "sqlserver-odbc":
-					case "oracle-odbc":
-
-					case "sybase-odbc":
-						await connection.query(query, values);
-						break;
-
-					case "sqlserver-native": {
-						const request = connection.request();
-						const sqlserverValues = batch
-							.map(
-								(row) =>
-									"(" +
-									columns.map((col) => formatSQLValue(row[col])).join(", ") +
-									")"
-							)
-							.join(", ");
-						const finalQuery = `INSERT INTO ${table} (${columns.join(
-							", "
-						)}) VALUES ${sqlserverValues}`;
-						await request.query(finalQuery);
-						break;
-					}
-
-					case "oracle-native":
-						await connection.executeMany(
-							`INSERT INTO ${table} (${columns.join(", ")}) VALUES (${columns
-								.map((_, i) => `:${i + 1}`)
-								.join(", ")})`,
-							batch.map((row) => columns.map((col) => row[col]))
-						);
-						break;
-
-					case "mongodb-native": {
-						const db = connection.db();
-						const collection = db.collection(table);
-						await collection.insertMany(batch);
-						break;
-					}
-
-					default:
-						throw new Error(
-							`Unsupported combination dialect and driver: ${type}`
-						);
-				}
-
-				successfulInserts.push(...batch);
+				await insertBatch({ type, connection, table, columns, batch });
+				loadedData.push(...batch);
 			} catch (err) {
-				failedBatches.push(batchIndex + 1);
-				console.log(err);
+				errors.push(err.message);
 			}
 		}
 
-		if (failedBatches.length > 0 && successfulInserts.length === 0) {
-			results[table] = `Load failed for ${table}. All batches failed.`;
-		} else if (failedBatches.length > 0) {
-			results[table] = successfulInserts;
-		} else {
-			results[table] = successfulInserts;
-		}
+		results[table] = {
+			data: loadedData,
+			error: errors,
+		};
 	}
 
 	return results;
+}
+
+async function insertBatch({ type, connection, table, columns, batch }) {
+	switch (type) {
+		case "mysql-native": {
+			const placeholders = "(" + columns.map(() => "?").join(", ") + ")";
+			const query =
+				`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
+				batch.map(() => placeholders).join(", ");
+			const values = batch.flatMap((row) => columns.map((col) => row[col]));
+			await connection.query(query, values);
+			break;
+		}
+
+		case "mysql-odbc": {
+			const values = batch.flatMap((row) => columns.map((col) => row[col]));
+			const query =
+				`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
+				batch
+					.map(() => "(" + columns.map(() => "?").join(", ") + ")")
+					.join(", ");
+			await connection.query(query, values);
+			break;
+		}
+
+		case "postgres-native": {
+			const values = batch.flatMap((row) => columns.map((col) => row[col]));
+			const query =
+				`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
+				batch
+					.map(() => "(" + columns.map(() => "?").join(", ") + ")")
+					.join(", ");
+			await connection.query(query, values);
+			break;
+		}
+
+		case "postgres-odbc": {
+			const values = batch.flatMap((row) => columns.map((col) => row[col]));
+			const query =
+				`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
+				batch
+					.map(() => "(" + columns.map(() => "?").join(", ") + ")")
+					.join(", ");
+			await connection.query(query, values);
+			break;
+		}
+
+		case "sqlserver-odbc": {
+			const values = batch.flatMap((row) => columns.map((col) => row[col]));
+			const query =
+				`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
+				batch
+					.map(() => "(" + columns.map(() => "?").join(", ") + ")")
+					.join(", ");
+			await connection.query(query, values);
+			break;
+		}
+
+		case "sqlserver-native": {
+			const request = connection.request();
+			const values = batch
+				.map(
+					(row) =>
+						"(" +
+						columns.map((col) => formatSQLValue(row[col])).join(", ") +
+						")"
+				)
+				.join(", ");
+			const query = `INSERT INTO ${table} (${columns.join(
+				", "
+			)}) VALUES ${values}`;
+			await request.query(query);
+			break;
+		}
+
+		case "oracle-native": {
+			await connection.executeMany(
+				`INSERT INTO ${table} (${columns.join(", ")}) VALUES (${columns
+					.map((_, i) => `:${i + 1}`)
+					.join(", ")})`,
+				batch.map((row) => columns.map((col) => row[col]))
+			);
+			break;
+		}
+
+		case "oracle-odbc": {
+			const values = batch.flatMap((row) => columns.map((col) => row[col]));
+			const query =
+				`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
+				batch
+					.map(() => "(" + columns.map(() => "?").join(", ") + ")")
+					.join(", ");
+			await connection.query(query, values);
+			break;
+		}
+
+		case "sybase-odbc": {
+			const values = batch.flatMap((row) => columns.map((col) => row[col]));
+			const query =
+				`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
+				batch
+					.map(() => "(" + columns.map(() => "?").join(", ") + ")")
+					.join(", ");
+			await connection.query(query, values);
+			break;
+		}
+
+		case "mongodb-native": {
+			const db = connection.db();
+			const collection = db.collection(table);
+			await collection.insertMany(batch);
+			break;
+		}
+
+		default:
+			throw new Error(`Unsupported combination dialect and driver: ${type}`);
+	}
 }
 
 function splitIntoChunks(array, size = 500) {
