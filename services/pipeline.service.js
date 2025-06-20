@@ -132,33 +132,38 @@ class PipelineService {
 	}
 
 	async execute(data, session) {
+		let dbTrx;
 		try {
+			dbTrx = await Connection.transaction();
+
 			let { action, pipeline_id } = data;
 
 			const pipeline = await PipelineRepository.findForETL(pipeline_id);
 
-			const resultETL = await runETL({
+			const result = await runETL({
 				source: pipeline.source,
 				destination: pipeline.destination,
 				is_preview: action === "preview" ? true : false,
 			});
 
+			return result;
+
 			if (action === "run") {
 				await LogRepository.create(
 					{
 						actor_id: session.user_id,
-						details: resultETL.log,
+						details: result.log,
 						action: "execute",
 					},
 					dbTrx
 				);
 			}
 
-			return {
-				log: resultETL.log,
-				// data: resultETL.src,
-			};
+			await dbTrx.commit();
+
+			return result.dst;
 		} catch (error) {
+			if (dbTrx) await dbTrx.rollback();
 			throw error;
 		}
 	}

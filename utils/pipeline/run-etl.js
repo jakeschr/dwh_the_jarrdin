@@ -1,6 +1,6 @@
 const { extract } = require("./extract");
 const { transform } = require("./transform");
-// const { load } = require("./load");
+const { load } = require("./load");
 const { timeHandler } = require("../time-handler.util");
 const { connectionHandler } = require("../connection-handler.util");
 
@@ -77,41 +77,38 @@ const runETL = async ({
 			return workingData;
 		}
 
-		// /////////////////////////////////////////////////////////////////////////////
-		// // 3. LOAD
-		// for (const destination of destinations) {
-		// 	const result = await load({
-		// 		api: destination.api,
-		// 		configs: destination.configs,
-		// 		data: workingData.dst,
-		// 	});
+		/////////////////////////////////////////////////////////////////////////////
+		// 3. LOAD
+		const loadedData = await load({
+			database: destination.database,
+			configs: destination.configs,
+			data: workingData.dst,
+		});
 
-		// 	for (const [alias, data] of Object.entries(result)) {
-		// 		if (Array.isArray(data)) {
-		// 			workingData.log.load_log.push(
-		// 				buildLog(alias, "success", data, "load")
-		// 			);
-		// 		} else {
-		// 			workingData.log.load_log.push(buildLog(alias, "error", data, "load"));
-		// 		}
-		// 	}
-		// }
+		return loadedData;
+
+		for (const [alias, data] of Object.entries(loadedData)) {
+			if (Array.isArray(data)) {
+				workingData.log.load_log.push(buildLog(alias, "success", data, "load"));
+			} else {
+				workingData.log.load_log.push(buildLog(alias, "error", data, "load"));
+			}
+		}
 
 		workingData.log.end_time = timeHandler.nowEpoch();
-
-		await connectionHandler.close(
-			source.database.connection,
-			source.database.dialect
-		);
-
-		await connectionHandler.close(
-			destination.database.connection,
-			destination.database.dialect
-		);
 
 		return workingData;
 	} catch (error) {
 		throw error;
+	} finally {
+		await connectionHandler.close(
+			source.database.connection,
+			source.database.dialect
+		);
+		await connectionHandler.close(
+			destination.database.connection,
+			destination.database.dialect
+		);
 	}
 };
 

@@ -99,7 +99,7 @@ function transform({ data, configs, is_preview }) {
 
 				// Tentukan batas limit jika modenya adalah preview
 				if (is_preview) {
-					data.dst[table] = (data.dst[table] || []).slice(0, 100);
+					data.dst[table] = (data.dst[table] || []).slice(0, 25);
 				}
 			} catch (error) {
 				data.dst[table] = error.message;

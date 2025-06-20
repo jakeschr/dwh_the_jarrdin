@@ -1,75 +1,104 @@
-const axios = require("axios");
+const BATCH_SIZE = 500;
 
-async function load({ api, data, configs }) {
-	const headers = await buildHeaders(api);
+async function load({ database, configs, data }) {
 	const results = {};
+	const { connection, dialect, driver } = database;
+	const type = `${dialect}-${driver}`;
 
 	for (const config of configs.sort((a, b) => a.order - b.order)) {
-		const alias = config.name;
+		const { table, columns } = config;
+		const rows = data[table];
 
-		try {
-			if (!data.hasOwnProperty(alias)) {
-				throw new Error(`Data '${alias}' not found in source.`);
+		if (!Array.isArray(rows) || rows.length === 0) {
+			results[table] = [];
+			continue;
+		}
+
+		const batches = splitIntoChunks(rows, BATCH_SIZE);
+		const successfulInserts = [];
+		const failedBatches = [];
+
+		for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+			const batch = batches[batchIndex];
+
+			try {
+				const placeholders = "(" + columns.map(() => "?").join(", ") + ")";
+				const query =
+					`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
+					batch.map(() => placeholders).join(", ");
+				const values = batch.flatMap((row) => columns.map((col) => row[col]));
+
+				switch (type) {
+					case "mysql-native":
+					case "mysql-odbc":
+					case "postgres-native":
+					case "postgres-odbc":
+					case "sqlserver-odbc":
+					case "oracle-odbc":
+
+					case "sybase-odbc":
+						await connection.query(query, values);
+						break;
+
+					case "sqlserver-native": {
+						const request = connection.request();
+						const sqlserverValues = batch
+							.map(
+								(row) =>
+									"(" +
+									columns.map((col) => formatSQLValue(row[col])).join(", ") +
+									")"
+							)
+							.join(", ");
+						const finalQuery = `INSERT INTO ${table} (${columns.join(
+							", "
+						)}) VALUES ${sqlserverValues}`;
+						await request.query(finalQuery);
+						break;
+					}
+
+					case "oracle-native":
+						await connection.executeMany(
+							`INSERT INTO ${table} (${columns.join(", ")}) VALUES (${columns
+								.map((_, i) => `:${i + 1}`)
+								.join(", ")})`,
+							batch.map((row) => columns.map((col) => row[col]))
+						);
+						break;
+
+					case "mongodb-native": {
+						const db = connection.db();
+						const collection = db.collection(table);
+						await collection.insertMany(batch);
+						break;
+					}
+
+					default:
+						throw new Error(
+							`Unsupported combination dialect and driver: ${type}`
+						);
+				}
+
+				successfulInserts.push(...batch);
+			} catch (err) {
+				failedBatches.push(batchIndex + 1);
+				console.log(err);
 			}
+		}
 
-			if (!Array.isArray(data[alias])) {
-				throw new Error(`Data for '${alias}' must be an array.`);
-			}
-
-			if (data[alias].length === 0) {
-				results[alias] = [];
-				continue;
-			}
-
-			let loaded = await loadData(api, data[alias], config, headers);
-
-			results[alias] = loaded;
-		} catch (err) {
-			results[alias] = err.message;
+		if (failedBatches.length > 0 && successfulInserts.length === 0) {
+			results[table] = `Load failed for ${table}. All batches failed.`;
+		} else if (failedBatches.length > 0) {
+			results[table] = successfulInserts;
+		} else {
+			results[table] = successfulInserts;
 		}
 	}
 
 	return results;
 }
 
-async function loadData(api, data, config, headers) {
-	const url = normalizeUrl(api.base_url, config.target);
-	const method = (config.http_method || "put").toLowerCase();
-	const batchSize = config.batch_size || 100;
-
-	const chunks = splitIntoChunks(data, batchSize);
-	const results = [];
-
-	for (const chunk of chunks) {
-		try {
-			let res;
-
-			switch (method) {
-				case "post":
-					res = await axios.post(url, chunk, { headers });
-					break;
-				case "put":
-					res = await axios.put(url, chunk, { headers });
-					break;
-				case "patch":
-					res = await axios.patch(url, chunk, { headers });
-					break;
-				default:
-					throw new Error(`Unsupported HTTP method: ${method}`);
-			}
-
-			const rawData = res.data.data;
-
-			results.push(...(Array.isArray(rawData) ? rawData : [rawData]));
-		} catch (err) {
-			throw new Error(`LOAD ERROR ${url}: ${err.message}`);
-		}
-	}
-
-	return results;
-}
-
-function splitIntoChunks(array, size = 100) {
+function splitIntoChunks(array, size = 500) {
 	const chunks = [];
 	for (let i = 0; i < array.length; i += size) {
 		chunks.push(array.slice(i, i + size));
@@ -77,54 +106,11 @@ function splitIntoChunks(array, size = 100) {
 	return chunks;
 }
 
-
-async function buildHeaders(api) {
-	const headers = { ...(api.headers || {}) };
-
-	try {
-		switch (api.auth_type) {
-			case "bearer":
-				const authUrl = normalizeUrl(api.base_url, api.auth_url);
-				const res = await axios.post(
-					authUrl,
-					{ auth_key: api.auth_key },
-					{ headers }
-				);
-				const token = res.data.data.token;
-				if (!token) {
-					throw {
-						code: 500,
-						message: "Token not found in bearer response",
-					};
-				}
-				headers["Authorization"] = `Bearer ${token}`;
-				break;
-
-			case "api_key":
-				headers["x-api-key"] = api.auth_key;
-				break;
-
-			case "basic":
-				headers["Authorization"] = `Basic ${Buffer.from(api.auth_key).toString(
-					"base64"
-				)}`;
-				break;
-
-			default:
-				throw new Error(`Unsupported auth type: ${api.auth_type}`);
-		}
-
-		return headers;
-	} catch (error) {
-		console.error(error);
-
-		throw new Error(`ERROR BUILD HEADERS: ${error}`);
-	}
-}
-
-
-function normalizeUrl(base, path) {
-	return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+function formatSQLValue(val) {
+	if (val === null || val === undefined) return "NULL";
+	if (typeof val === "string") return `'${val.replace(/'/g, "''")}'`;
+	if (val instanceof Date) return `'${val.toISOString()}'`;
+	return val;
 }
 
 module.exports = { load };
