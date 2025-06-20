@@ -18,9 +18,6 @@ async function extract({ database, configs, time_threshold }) {
 				query = buildSQLQuery(config, time_threshold, type);
 			}
 
-			console.log(config.filters);
-			console.log(query);
-
 			switch (type) {
 				case "mysql-native": {
 					const [rows] = await connection.query(query);
