@@ -14,7 +14,13 @@
 					"area",
 					"timestamp"
 				],
-				"filters": null
+				"filters": [
+					{
+						"fields": ["timestamp"],
+						"operator": "gte",
+						"value": "DYNAMIC(1735693200000)"
+					}
+				]
 			},
 			{
 				"table": "occupant",

@@ -3,11 +3,11 @@ const {
 	Sequelize,
 	Op,
 	PipelineModel,
-	PipelineConfigModel,
 	DatabaseModel,
 } = require("../models/index.js");
 
 const { timeHandler } = require("../utils/time-handler.util.js");
+const { passwordHandler } = require("../utils/password-handler.util");
 
 class PipelineRepository {
 	async handleTransaction(dbTrxGlobal) {
@@ -130,60 +130,100 @@ class PipelineRepository {
 		try {
 			const row = await PipelineModel.findOne({
 				where: { pipeline_id: pipelineId },
-				attributes: ["pipeline_id"],
 				include: [
 					{
-						model: PipelineConfigModel,
+						model: DatabaseModel,
 						required: true,
-						attributes: ["configs", "type"],
-						include: [
-							{
-								model: DatabaseModel,
-								required: true,
-							},
-						],
+						as: "src_db",
+					},
+					{
+						model: DatabaseModel,
+						required: true,
+						as: "dst_db",
 					},
 				],
 			});
 
-			const formatResult = (pipeline) => {
-				const grouped = { src: [], dst: [] };
+			if (!row) {
+				throw Object.assign(new Error("Pipeline not found."), {
+					code: 404,
+				});
+			}
 
-				for (const item of pipeline.pipeline_databases) {
-					const db = item.database;
-
-					const formatted = {
-						database: {
-							database_id: db.database_id,
-							label: db.label,
-							database: db.database,
-							dialect: db.dialect,
-							host: db.host,
-							port: db.port,
-							username: db.username,
-							password: db.password,
-							driver: db.driver,
-							dsn: db.dsn,
-							schema: db.schema,
-							connection_uri: db.connection_uri,
-							options: JSON.parse(db.options),
-						},
-						configs: JSON.parse(item.configs),
-					};
-
-					if (grouped[item.type]) {
-						grouped[item.type].push(formatted);
+			if (!row.src_db.is_active) {
+				throw Object.assign(
+					new Error(`Database source '${row.src_db.label}' not active.`),
+					{
+						code: 400,
 					}
+				);
+			}
+
+			if (!row.dst_db.is_active) {
+				throw Object.assign(
+					new Error(`Database destination '${row.dst_db.label}' not active.`),
+					{
+						code: 400,
+					}
+				);
+			}
+
+			const formatResult = (row) => {
+				if (row.src_db.password) {
+					row.src_db.password = passwordHandler.decryptSymmetric(
+						row.src_db.password
+					);
 				}
+
+				if (row.dst_db.password) {
+					row.dst_db.password = passwordHandler.decryptSymmetric(
+						row.dst_db.password
+					);
+				}
+
 				return {
-					pipeline_id: pipeline.pipeline_id,
-					is_preview: false,
-					sources: grouped.src,
-					destinations: grouped.dst,
+					pipeline_id: row.pipeline_id,
+					name: row.name,
+					source: {
+						database: {
+							database_id: row.src_db.database_id,
+							label: row.src_db.label,
+							database: row.src_db.database,
+							dialect: row.src_db.dialect,
+							host: row.src_db.host,
+							port: row.src_db.port,
+							username: row.src_db.username,
+							password: row.src_db.password,
+							driver: row.src_db.driver,
+							dsn: row.src_db.dsn,
+							schema: row.src_db.schema,
+							connection_uri: row.src_db.connection_uri,
+							options: JSON.parse(row.src_db.options),
+						},
+						configs: JSON.parse(row.src_configs),
+					},
+					destination: {
+						database: {
+							database_id: row.dst_db.database_id,
+							label: row.dst_db.label,
+							database: row.dst_db.database,
+							dialect: row.dst_db.dialect,
+							host: row.dst_db.host,
+							port: row.dst_db.port,
+							username: row.dst_db.username,
+							password: row.dst_db.password,
+							driver: row.dst_db.driver,
+							dsn: row.dst_db.dsn,
+							schema: row.dst_db.schema,
+							connection_uri: row.dst_db.connection_uri,
+							options: JSON.parse(row.dst_db.options),
+						},
+						configs: JSON.parse(row.dst_configs),
+					},
 				};
 			};
 
-			return row ? formatResult(row) : null;
+			return formatResult(row);
 		} catch (error) {
 			throw error;
 		}

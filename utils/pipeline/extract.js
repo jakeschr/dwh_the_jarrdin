@@ -1,139 +1,274 @@
-const axios = require("axios");
 const { timeHandler } = require("../time-handler.util");
-const xss = require("xss");
 
-async function extract({ api, configs, time_threshold }) {
-	const headers = await buildHeaders(api);
+async function extract({ database, configs, time_threshold }) {
 	const results = {};
 
-	await Promise.allSettled(
-		configs.map(async (config) => {
-			try {
-				const data = await extractData(api, config, headers, time_threshold);
-				results[config.name] = data;
-			} catch (error) {
-				results[
-					config.name
-				] = `Extract failed for ${config.target}: ${error.message}`;
-			}
-		})
-	);
+	for (const config of configs) {
+		try {
+			const extractedData = await executeQuery(
+				database,
+				config,
+				time_threshold
+			);
+
+			results[config.table] = extractedData;
+		} catch (error) {
+			results[
+				config.table
+			] = `Extract failed for ${config.table}: ${error.message}`;
+		}
+	}
 
 	return results;
 }
 
-async function extractData(api, config, headers, time_threshold) {
-	const url = normalizeUrl(api.base_url, config.target);
-	const fields = config.fields;
-	const method = (config.http_method || "post").toLowerCase();
-	const pagination = config.pagination || undefined;
-
-	let res;
-
-	switch (method) {
-		case "post": {
-			const filters = buildFilter(config.filters, time_threshold);
-			const body = { filters, ...(pagination && { pagination }) };
-			res = await axios.post(url, body, { headers });
-			break;
-		}
-		case "get": {
-			res = await axios.get(url, { headers, params: pagination || {} });
-			break;
-		}
-		default:
-			throw new Error(`Unsupported HTTP method: ${method}`);
-	}
-
-	const rawData = res.data.data;
-	return Array.isArray(rawData)
-		? rawData.map((row) => {
-				const cleaned = {};
-				for (const key of fields) {
-					if (row.hasOwnProperty(key)) {
-
-						const val = row[key];
-						if (typeof val === "string" && val !== xss(val)) {
-							throw new Error("XSS detected in extracted data");
-						}
-						cleaned[key] = val;
-					}
-				}
-				return cleaned;
-		  })
-		: [];
-}
-
-async function buildHeaders(api) {
-	const headers = { ...(api.headers || {}) };
-
+async function executeQuery(database, config, time_threshold) {
 	try {
-		switch (api.auth_type) {
-			case "bearer":
-				const authUrl = normalizeUrl(api.base_url, api.auth_url);
-				const res = await axios.post(
-					authUrl,
-					{ auth_key: api.auth_key },
-					{ headers }
+		let result = [];
+
+		const { connection, dialect, driver } = database;
+		const type = dialect + "-" + driver;
+
+		switch (type) {
+			case "mysql-native": {
+				const [rows] = await connection.query(
+					buildSQLQuery(database, config, time_threshold)
 				);
-				const token = res.data.data.token;
-				if (!token) {
-					throw new Error("Token not found in bearer response");
-				}
-				headers["Authorization"] = `Bearer ${token}`;
+				result = rows;
 				break;
-
-			case "api_key":
-				headers["x-api-key"] = api.auth_key;
+			}
+			case "mysql-odbc": {
+				const rows = await connection.query(
+					buildSQLQuery(database, config, time_threshold)
+				);
+				result = rows;
 				break;
-
-			case "basic":
-				headers["Authorization"] = `Basic ${Buffer.from(api.auth_key).toString(
-					"base64"
-				)}`;
+			}
+			case "postgres-native": {
+				const res = await connection.query(
+					buildSQLQuery(database, config, time_threshold)
+				);
+				result = res.rows;
 				break;
+			}
+			case "postgres-odbc": {
+				const rows = await connection.query(
+					buildSQLQuery(database, config, time_threshold)
+				);
+				result = rows;
+				break;
+			}
+			case "sqlserver-native": {
+				const res = await connection
+					.request()
+					.query(buildSQLQuery(database, config, time_threshold));
+				result = res.recordset;
+				break;
+			}
+			case "sqlserver-odbc": {
+				const rows = await connection.query(
+					buildSQLQuery(database, config, time_threshold)
+				);
+				result = rows;
+				break;
+			}
+			case "oracle-native": {
+				const res = await connection.execute(
+					buildSQLQuery(database, config, time_threshold)
+				);
+				result = res.rows;
+				break;
+			}
+			case "oracle-odbc": {
+				const rows = await connection.query(
+					buildSQLQuery(database, config, time_threshold)
+				);
+				result = rows;
+				break;
+			}
+			case "sybase-odbc": {
+				const rows = await connection.query(
+					buildSQLQuery(database, config, time_threshold)
+				);
+				result = rows;
+				break;
+			}
+			case "mongodb-native": {
+				result = [];
+				break;
+			}
 
 			default:
-				throw new Error(`Unsupported auth type: ${api.auth_type}`);
+				throw new Error("Unsupported combination dialect and driver :", type);
 		}
 
-		return headers;
+		return result;
 	} catch (error) {
-		console.error(error);
-		throw new Error(`buildHeaders error: ${error.message}`);
+		throw error;
 	}
 }
 
-function buildFilter(filters = [], time_threshold) {
-	const finalFilters = [];
+function buildSQLQuery(database, config, time_threshold) {
+	try {
+		const { dialect, driver } = database;
+		const table = config.table;
+		const columns = config.columns.join(", ");
 
-	for (const filter of filters) {
-		let { type = "static", fields, operator, value } = filter;
+		let whereClause = "";
+		if (config.filters && config.filters.length > 0) {
+			const conditions = config.filters.map((filter) =>
+				buildFilter(filter, time_threshold)
+			);
+			whereClause = `WHERE ${conditions.join(" AND ")}`;
+		}
 
-		if (type === "dynamic" && time_threshold) {
-			try {
-				let format = timeHandler.getFormat(value);
-				if (format === "epoch_ms") {
-					value = time_threshold;
-				} else if (format === "epoch_s") {
-					value = Math.floor(time_threshold / 1000);
-				} else {
-					value = timeHandler.epochToString(time_threshold, format);
+		let baseQuery = `SELECT ${columns} FROM ${table} ${whereClause}`;
+
+		// Placeholder untuk tweak berdasarkan dialect-driver (opsional)
+		if (dialect === "sqlserver" && driver === "odbc") {
+			// Misalnya jika kamu mau tambahkan TOP, atau ubah LIMIT ke FETCH
+		}
+
+		return baseQuery;
+	} catch (error) {
+		throw error;
+	}
+}
+
+function buildFilter(filter, time_threshold) {
+	try {
+		const { columns, operator, value } = filter;
+		const colExpr =
+			columns.length > 1 ? `CONCAT(${columns.join(", ') || ('")})` : columns[0];
+
+		let val = value;
+
+		// Tangani DYNAMIC(...) → ubah ke nilai berdasarkan time_threshold
+		if (typeof val === "string" && /^DYNAMIC\((.+)\)$/.test(val)) {
+			if (!time_threshold) {
+				throw new Error("Missing time_threshold for DYNAMIC filter value.");
+			}
+			const extracted = val.match(/^DYNAMIC\((.+)\)$/)[1];
+			const format = timeHandler.getFormat(extracted);
+			val = timeHandler.epochToString(time_threshold, format);
+			val = `'${val}'`;
+		} else if (typeof val === "string") {
+			val = `'${val}'`;
+		} else if (val === null) {
+			val = "NULL";
+		}
+
+		switch (operator) {
+			case "eq":
+				return `${colExpr} = ${val}`;
+			case "ne":
+				return `${colExpr} != ${val}`;
+			case "gt":
+				return `${colExpr} > ${val}`;
+			case "lt":
+				return `${colExpr} < ${val}`;
+			case "gte":
+				return `${colExpr} >= ${val}`;
+			case "lte":
+				return `${colExpr} <= ${val}`;
+			case "like":
+				return `${colExpr} LIKE ${val}`;
+			case "not_like":
+				return `${colExpr} NOT LIKE ${val}`;
+			case "is":
+				return `${colExpr} IS ${val}`;
+			case "not":
+				return `${colExpr} IS NOT ${val}`;
+			case "in":
+				return `${colExpr} IN (${value.map((v) => `'${v}'`).join(", ")})`;
+			case "not_in":
+				return `${colExpr} NOT IN (${value.map((v) => `'${v}'`).join(", ")})`;
+			case "between":
+				return `${colExpr} BETWEEN '${value[0]}' AND '${value[1]}'`;
+			case "not_between":
+				return `${colExpr} NOT BETWEEN '${value[0]}' AND '${value[1]}'`;
+			default:
+				throw new Error(`Unsupported operator: ${operator}`);
+		}
+	} catch (error) {
+		throw error;
+	}
+}
+
+function buildMongoQuery(config, time_threshold) {
+	try {
+		const query = {};
+
+		if (!config.filters || config.filters.length === 0) {
+			return query;
+		}
+
+		for (const filter of config.filters) {
+			const field = filter.columns[0]; // Mongo hanya mendukung satu kolom per filter
+			let val = filter.value;
+
+			if (typeof val === "string" && /^DYNAMIC\((.+)\)$/.test(val)) {
+				if (!time_threshold) {
+					throw new Error("Missing time_threshold for DYNAMIC filter value.");
 				}
-			} catch (error) {
-				throw error;
+				const extracted = val.match(/^DYNAMIC\((.+)\)$/)[1];
+				const format = timeHandler.getFormat(extracted);
+				val = timeHandler.epochToString(time_threshold, format);
+			}
+
+			// Operator mapping
+			switch (filter.operator) {
+				case "eq":
+					query[field] = val;
+					break;
+				case "ne":
+				case "not":
+					query[field] = { $ne: val };
+					break;
+				case "gt":
+					query[field] = { $gt: val };
+					break;
+				case "gte":
+					query[field] = { $gte: val };
+					break;
+				case "lt":
+					query[field] = { $lt: val };
+					break;
+				case "lte":
+					query[field] = { $lte: val };
+					break;
+				case "in":
+					query[field] = { $in: val };
+					break;
+				case "not_in":
+					query[field] = { $nin: val };
+					break;
+				case "like":
+					query[field] = { $regex: val, $options: "i" };
+					break;
+				case "not_like":
+					query[field] = { $not: { $regex: val, $options: "i" } };
+					break;
+				case "between":
+					query[field] = { $gte: val[0], $lte: val[1] };
+					break;
+				case "not_between":
+					query[field] = {
+						$not: { $gte: val[0], $lte: val[1] },
+					};
+					break;
+				case "is":
+					query[field] = val;
+					break;
+				default:
+					throw new Error(`Unsupported MongoDB operator: ${filter.operator}`);
 			}
 		}
 
-		finalFilters.push({ fields, operator, value });
+		return query;
+	} catch (error) {
+		throw error;
 	}
-
-	return finalFilters;
 }
-
-function normalizeUrl(base, path) {
-	return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
-}
-
 
 module.exports = { extract };

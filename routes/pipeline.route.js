@@ -5,6 +5,12 @@ const { PipelineController } = require("../controllers/pipeline.controller");
 const router = express.Router();
 
 router.get(
+	"/:version/pipeline/execute",
+	authorization, //
+	PipelineController.execute
+);
+
+router.get(
 	"/:version/pipeline",
 	authorization, //
 	PipelineController.findSummary
@@ -28,12 +34,6 @@ router.delete(
 	"/:version/pipeline/:id",
 	authorization, //
 	PipelineController.delete
-);
-
-router.get(
-	"/:version/pipeline/execute",
-	authorization, //
-	PipelineController.execute
 );
 
 module.exports = router;

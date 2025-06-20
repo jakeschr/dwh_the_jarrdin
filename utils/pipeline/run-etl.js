@@ -1,19 +1,19 @@
-// const { extract } = require("./extract");
+const { extract } = require("./extract");
 // const { transform } = require("./transform");
 // const { load } = require("./load");
-// const { timeHandler } = require("../time-handler.util");
+const { timeHandler } = require("../time-handler.util");
+const { connectionHandler } = require("../connection-handler.util");
 
 const runETL = async ({
-	sources = [],
-	destinations = [],
-	is_preview = true,
+	source,
+	destination,
 	time_threshold,
+	is_preview = true,
 }) => {
 	const workingData = {
 		src: {},
 		dst: {},
 		log: {
-			message: "ETL executed successfully",
 			start_time: timeHandler.nowEpoch(),
 			end_time: null,
 			extract_log: [],
@@ -22,86 +22,99 @@ const runETL = async ({
 		},
 	};
 
-	// try {
-	// 	/////////////////////////////////////////////////////////////////////////////
-	// 	// 1. EXTRACT
-	// 	for (const source of sources) {
-	// 		const result = await extract({
-	// 			api: source.api,
-	// 			configs: source.configs,
-	// 			time_threshold: time_threshold,
-	// 		});
+	try {
+		source.database.connection = await connectionHandler.open(source.database);
+		destination.database.connection = await connectionHandler.open(
+			destination.database
+		);
 
-	// 		for (const [alias, data] of Object.entries(result)) {
-	// 			if (Array.isArray(data)) {
-	// 				workingData.src[alias] = data;
-	// 				workingData.log.extract_log.push(
-	// 					buildLog(alias, "success", data, "extract")
-	// 				);
-	// 			} else {
-	// 				workingData.src[alias] = [];
-	// 				workingData.log.extract_log.push(
-	// 					buildLog(alias, "error", data, "extract")
-	// 				);
-	// 			}
-	// 		}
-	// 	}
+		/////////////////////////////////////////////////////////////////////////////
+		// 1. EXTRACT
+		const result = await extract({
+			database: source.database,
+			configs: source.configs,
+			time_threshold: time_threshold,
+		});
 
-	// 	/////////////////////////////////////////////////////////////////////////////
-	// 	// 2. TRANSFORM
-	// 	for (const destination of destinations) {
-	// 		const result = await transform({
-	// 			configs: destination.configs,
-	// 			data: workingData,
-	// 			is_preview: is_preview,
-	// 		});
+		for (const [alias, data] of Object.entries(result)) {
+			if (Array.isArray(data)) {
+				workingData.src[alias] = data;
+				workingData.log.extract_log.push(
+					buildLog(alias, "success", data, "extract")
+				);
+			} else {
+				workingData.src[alias] = [];
+				workingData.log.extract_log.push(
+					buildLog(alias, "error", data, "extract")
+				);
+			}
+		}
 
-	// 		for (const [alias, data] of Object.entries(result)) {
-	// 			if (Array.isArray(data)) {
-	// 				workingData.dst[alias] = data;
-	// 				workingData.log.transform_log.push(
-	// 					buildLog(alias, "success", data, "transform")
-	// 				);
-	// 			} else {
-	// 				workingData.dst[alias] = [];
-	// 				workingData.log.transform_log.push(
-	// 					buildLog(alias, "error", data, "transform")
-	// 				);
-	// 			}
-	// 		}
-	// 	}
+		// /////////////////////////////////////////////////////////////////////////////
+		// // 2. TRANSFORM
+		// for (const destination of destinations) {
+		// 	const result = await transform({
+		// 		configs: destination.configs,
+		// 		data: workingData,
+		// 		is_preview: is_preview,
+		// 	});
 
-	// 	if (is_preview === true) {
-	// 		workingData.log.end_time = timeHandler.nowEpoch();
-	// 		return workingData;
-	// 	}
+		// 	for (const [alias, data] of Object.entries(result)) {
+		// 		if (Array.isArray(data)) {
+		// 			workingData.dst[alias] = data;
+		// 			workingData.log.transform_log.push(
+		// 				buildLog(alias, "success", data, "transform")
+		// 			);
+		// 		} else {
+		// 			workingData.dst[alias] = [];
+		// 			workingData.log.transform_log.push(
+		// 				buildLog(alias, "error", data, "transform")
+		// 			);
+		// 		}
+		// 	}
+		// }
 
-	// 	/////////////////////////////////////////////////////////////////////////////
-	// 	// 3. LOAD
-	// 	for (const destination of destinations) {
-	// 		const result = await load({
-	// 			api: destination.api,
-	// 			configs: destination.configs,
-	// 			data: workingData.dst,
-	// 		});
+		// if (is_preview === true) {
+		// 	workingData.log.end_time = timeHandler.nowEpoch();
+		// 	return workingData;
+		// }
 
-	// 		for (const [alias, data] of Object.entries(result)) {
-	// 			if (Array.isArray(data)) {
-	// 				workingData.log.load_log.push(
-	// 					buildLog(alias, "success", data, "load")
-	// 				);
-	// 			} else {
-	// 				workingData.log.load_log.push(buildLog(alias, "error", data, "load"));
-	// 			}
-	// 		}
-	// 	}
+		// /////////////////////////////////////////////////////////////////////////////
+		// // 3. LOAD
+		// for (const destination of destinations) {
+		// 	const result = await load({
+		// 		api: destination.api,
+		// 		configs: destination.configs,
+		// 		data: workingData.dst,
+		// 	});
 
-	// 	workingData.log.end_time = timeHandler.nowEpoch();
+		// 	for (const [alias, data] of Object.entries(result)) {
+		// 		if (Array.isArray(data)) {
+		// 			workingData.log.load_log.push(
+		// 				buildLog(alias, "success", data, "load")
+		// 			);
+		// 		} else {
+		// 			workingData.log.load_log.push(buildLog(alias, "error", data, "load"));
+		// 		}
+		// 	}
+		// }
 
-	// 	return workingData;
-	// } catch (error) {
-	// 	throw error;
-	// }
+		workingData.log.end_time = timeHandler.nowEpoch();
+
+		await connectionHandler.close(
+			source.database.connection,
+			source.database.dialect
+		);
+
+		await connectionHandler.close(
+			destination.database.connection,
+			destination.database.dialect
+		);
+
+		return workingData;
+	} catch (error) {
+		throw error;
+	}
 };
 
 function buildLog(name, status, result, type) {

@@ -108,7 +108,7 @@ class DatabaseRepository {
 			}
 
 			if (!row.is_active) {
-				throw Object.assign(new Error(`Database ${row.label} not inactive.`), {
+				throw Object.assign(new Error(`Database ${row.label} not active.`), {
 					code: 400,
 				});
 			}

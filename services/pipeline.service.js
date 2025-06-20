@@ -131,60 +131,35 @@ class PipelineService {
 		}
 	}
 
-	async execute(data) {
+	async execute(data, session) {
 		try {
-			let { pipeline_id, action, sources, destinations } = data;
+			let { action, pipeline_id } = data;
 
-			console.log(data);
+			const pipeline = await PipelineRepository.findForETL(pipeline_id);
 
-			let payload;
+			return pipeline
+
+			const resultETL = await runETL({
+				source: pipeline.source,
+				destination: pipeline.destination,
+				is_preview: action === "preview" ? true : false,
+			});
+
 			if (action === "run") {
-				payload = await PipelineRepository.findForETL(pipeline_id);
-
-				if (!payload) {
-					throw Object.assign(new Error("Pipeline not found."), {
-						code: 404,
-					});
-				}
-			} else if (action === "preview") {
-				// Parallel fetch untuk semua API preview
-				const [srcPipelines, dstDatabases] = await Promise.all([
-					Promise.all(
-						sources.map(async (src) => ({
-							database: await DatabaseRepository.findForPreview(
-								src.database_id,
-								"source"
-							),
-							configs: src.configs,
-						}))
-					),
-					Promise.all(
-						destinations.map(async (dst) => ({
-							database: await DatabaseRepository.findForPreview(
-								dst.database_id,
-								"destination"
-							),
-							configs: dst.configs,
-						}))
-					),
-				]);
-
-				payload = {
-					is_preview: true,
-					sources: srcDatabases,
-					destinations: dstDatabases,
-				};
-			} else {
-				throw new Error(`Unsupported action: ${action}`);
+				await LogRepository.create(
+					{
+						actor_id: session.user_id,
+						details: resultETL.log,
+						action: "execute",
+					},
+					dbTrx
+				);
 			}
 
-			const dataETL = await runETL(payload);
-
-			// const result = {
-			// 	log: dataETL.log,
-			// 	data: dataETL.dst,
-			// };
-			return dataETL.log;
+			return {
+				log: resultETL.log,
+				data: resultETL.dst,
+			};
 		} catch (error) {
 			throw error;
 		}

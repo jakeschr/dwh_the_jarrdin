@@ -1,159 +1,91 @@
 {
-	"pipeline_id": "pln-mc3s513q-b245db",
-	"name": "DWH to OPT",
-	"description": "Testing ETL",
-	"source": {
-		"database": {
-			"database_id": "dtb-mc3bgcmx-75a02a",
-			"label": "Data Warehouse"
-		},
-		"configs": [
-			{
-				"table": "apartment",
-				"columns": [
-					"apartment_id",
-					"tower",
-					"floor",
-					"unit",
-					"area",
-					"timestamp"
-				],
-				"filters": null
-			},
-			{
-				"table": "occupant",
-				"columns": [
-					"occupant_id",
-					"name",
-					"email",
-					"phone",
-					"address",
-					"timestamp"
-				],
-				"filters": null
-			},
-			{
-				"table": "contract",
-				"columns": [
-					"contract_id",
-					"apartment_id",
-					"occupant_id",
-					"start_date",
-					"end_date",
-					"amount",
-					"type",
-					"status",
-					"timestamp"
-				],
-				"filters": null
-			},
-			{
-				"table": "invoice",
-				"columns": [
-					"invoice_id",
-					"contract_id",
-					"due_date",
-					"amount",
-					"type",
-					"status",
-					"timestamp"
-				],
-				"filters": null
-			},
-			{
-				"table": "payment",
-				"columns": [
-					"payment_id",
-					"invoice_id",
-					"payment_date",
-					"payment_amount",
-					"payment_method",
-					"timestamp"
-				],
-				"filters": null
-			}
-		]
+	"database": {
+		"database_id": "dtb-mc3bgcmx-75a02a",
+		"label": "Data Warehouse",
+		"database": "jakeschr_the_jarrdin_dwh",
+		"dialect": "mysql",
+		"host": "jakeschr.com",
+		"port": 3306,
+		"username": "jakeschr_the_jarrdin_dwh",
+		"password": "ZPJSefcbA9VVUAcSEWEN",
+		"driver": "native",
+		"dsn": null,
+		"schema": null,
+		"connection_uri": null,
+		"options": null,
+		"connection": "this is object connection"
 	},
-	"destination": {
-		"database": {
-			"database_id": "dtb-mc3dxk88-f528a9",
-			"label": "Sybase The Jarrdin Opt"
+	"configs": [
+		{
+			"table": "apartment",
+			"columns": [
+				"apartment_id",
+				"tower",
+				"floor",
+				"unit",
+				"area",
+				"timestamp"
+			],
+			"filters": [
+				{
+					"columns": ["timestamp"],
+					"operator": "gte",
+					"value": "DYNAMIC(1735693200000)"
+				}
+			]
 		},
-		"configs": [
-			{
-				"table": "apartment",
-				"columns": [
-					"apartment_id",
-					"tower",
-					"floor",
-					"unit",
-					"area",
-					"timestamp"
-				],
-				"init_value": "src.apartment",
-				"order": 1,
-				"transforms": null
-			},
-			{
-				"table": "occupant",
-				"columns": [
-					"occupant_id",
-					"name",
-					"email",
-					"phone",
-					"address",
-					"timestamp"
-				],
-				"init_value": "src.occupant",
-				"order": 2,
-				"transforms": null
-			},
-			{
-				"table": "contract",
-				"columns": [
-					"contract_id",
-					"apartment_id",
-					"occupant_id",
-					"start_date",
-					"end_date",
-					"amount",
-					"type",
-					"status",
-					"timestamp"
-				],
-				"init_value": "src.contract",
-				"order": 3,
-				"transforms": null
-			},
-			{
-				"table": "invoice",
-				"columns": [
-					"invoice_id",
-					"contract_id",
-					"due_date",
-					"amount",
-					"type",
-					"status",
-					"timestamp"
-				],
-				"init_value": "src.invoice",
-				"order": 4,
-				"transforms": null
-			},
-			{
-				"table": "payment",
-				"columns": [
-					"payment_id",
-					"invoice_id",
-					"payment_date",
-					"payment_amount",
-					"payment_method",
-					"timestamp"
-				],
-				"init_value": "src.payment",
-				"order": 5,
-				"transforms": null
-			}
-		]
-	}
+		{
+			"table": "occupant",
+			"columns": [
+				"occupant_id",
+				"name",
+				"email",
+				"phone",
+				"address",
+				"timestamp"
+			],
+			"filters": null
+		},
+		{
+			"table": "contract",
+			"columns": [
+				"contract_id",
+				"apartment_id",
+				"occupant_id",
+				"start_date",
+				"end_date",
+				"amount",
+				"type",
+				"status",
+				"timestamp"
+			],
+			"filters": null
+		},
+		{
+			"table": "invoice",
+			"columns": [
+				"invoice_id",
+				"contract_id",
+				"due_date",
+				"amount",
+				"type",
+				"status",
+				"timestamp"
+			],
+			"filters": null
+		},
+		{
+			"table": "payment",
+			"columns": [
+				"payment_id",
+				"invoice_id",
+				"payment_date",
+				"payment_amount",
+				"payment_method",
+				"timestamp"
+			],
+			"filters": null
+		}
+	],
+	"time_threshold": 1750396296000
 }

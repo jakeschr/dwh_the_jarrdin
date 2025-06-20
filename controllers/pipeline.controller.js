@@ -191,7 +191,7 @@ class PipelineController {
 						});
 					}
 
-					result = await PipelineService.execute(req.body);
+					result = await PipelineService.execute(req.query, req.user);
 
 					break;
 				default:

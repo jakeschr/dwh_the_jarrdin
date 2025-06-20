@@ -122,7 +122,7 @@ class DatabaseService {
 	}
 
 	async connectionTest(data) {
-		let connectionObj = null;
+		let connection = null;
 
 		try {
 			// Ambil data konfigurasi dari repository
@@ -134,13 +134,11 @@ class DatabaseService {
 			}
 
 			// Lakukan koneksi
-			connectionObj = await connectionHandler.open(config);
-
-			const { connection, type } = connectionObj;
+			connection = await connectionHandler.open(config);
 
 			let tableList;
 
-			switch (type) {
+			switch (config.dialect) {
 				case "mysql": {
 					const [rows] = await connection.query("SHOW TABLES");
 					tableList = rows.map((row) => Object.values(row)[0]);
@@ -181,7 +179,7 @@ class DatabaseService {
 					break;
 				}
 
-				case "odbc": {
+				case "sybase": {
 					const resOdbc = await connection.query(`
 						SELECT table_name 
 						FROM systable 
@@ -195,9 +193,8 @@ class DatabaseService {
 				default:
 					throw new Error("Unsupported database type");
 			}
-			
 
-			await connectionHandler.close(connectionObj);
+			await connectionHandler.close(connection, config.dialect);
 
 			return {
 				status: "success",
@@ -205,11 +202,6 @@ class DatabaseService {
 				data: tableList,
 			};
 		} catch (error) {
-			// Jika error, kirim pesan gagal
-			if (connectionObj) {
-				await connectionHandler.close(connectionObj);
-			}
-
 			throw error;
 		}
 	}

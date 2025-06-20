@@ -14,9 +14,9 @@ const connectionHandler = {
 			if (dialect === "mongodb") {
 				const uri = config.connection_uri;
 				if (!uri) throw new Error("MongoDB requires 'connection_uri'");
-				const client = new MongoClient(uri);
-				await client.connect();
-				return { connection: client, type: "mongodb" };
+				const connection = new MongoClient(uri);
+				await connection.connect();
+				return connection;
 			}
 
 			// --- MySQL (native) ---
@@ -29,12 +29,12 @@ const connectionHandler = {
 					database: config.database,
 					...config.options,
 				});
-				return { connection: connection, type: "mysql" };
+				return connection;
 			}
 
 			// --- PostgreSQL (native) ---
 			if (dialect === "postgres" && driver === "native") {
-				const client = new PgClient({
+				const connection = new PgClient({
 					host: config.host,
 					port: config.port,
 					user: config.username,
@@ -42,13 +42,13 @@ const connectionHandler = {
 					database: config.database,
 					...config.options,
 				});
-				await client.connect();
-				return { connection: client, type: "postgres" };
+				await connection.connect();
+				return connection;
 			}
 
 			// --- SQL Server (native) ---
 			if (dialect === "sqlserver" && driver === "native") {
-				const pool = await sql.connect({
+				const connection = await sql.connect({
 					server: config.host,
 					port: config.port,
 					user: config.username,
@@ -60,7 +60,7 @@ const connectionHandler = {
 						...config.options,
 					},
 				});
-				return { connection: pool, type: "sqlserver" };
+				return connection;
 			}
 
 			// --- Oracle (native) ---
@@ -71,7 +71,8 @@ const connectionHandler = {
 					connectString: `${config.host}:${config.port}/${config.database}`,
 					...config.options,
 				});
-				return { connection: connection, type: "oracle" };
+
+				return connection;
 			}
 
 			// --- Sybase / SQL Server / Oracle via ODBC ---
@@ -84,9 +85,9 @@ const connectionHandler = {
 				if (config.password) connStr += `;PWD=${config.password}`;
 
 				const connection = await odbc.connect(connStr);
-				return { connection, type: "odbc" };
+
+				return connection;
 			}
-			
 
 			throw new Error(
 				`Unsupported combination: dialect=${dialect}, driver=${driver}`
@@ -98,12 +99,9 @@ const connectionHandler = {
 		}
 	},
 
-	async close(config) {
-		const { connection, type } = config;
+	async close(connection, dialect) {
 		try {
-			if (!connection || !type) return;
-
-			if (type === "mysql" || type === "postgres") {
+			if (dialect === "mysql" || dialect === "postgres") {
 				await connection.end();
 			} else {
 				await connection.close();
