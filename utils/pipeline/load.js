@@ -16,7 +16,6 @@ async function load({ database, configs, data }) {
 
 		const batches = splitIntoChunks(rows, BATCH_SIZE);
 		const successfulInserts = [];
-		const failedBatches = [];
 
 		for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
 			const batch = batches[batchIndex];

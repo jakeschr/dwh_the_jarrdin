@@ -4,12 +4,7 @@ const { load } = require("./load");
 const { timeHandler } = require("../time-handler.util");
 const { connectionHandler } = require("../connection-handler.util");
 
-const runETL = async ({
-	source,
-	destination,
-	time_threshold,
-	is_preview = true,
-}) => {
+const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 	const workingData = {
 		src: {},
 		dst: {},
@@ -84,8 +79,6 @@ const runETL = async ({
 			configs: destination.configs,
 			data: workingData.dst,
 		});
-
-		return loadedData;
 
 		for (const [alias, data] of Object.entries(loadedData)) {
 			if (Array.isArray(data)) {

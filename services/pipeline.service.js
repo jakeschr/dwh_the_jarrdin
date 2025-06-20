@@ -146,22 +146,20 @@ class PipelineService {
 				is_preview: action === "preview" ? true : false,
 			});
 
-			return result;
-
-			if (action === "run") {
-				await LogRepository.create(
-					{
-						actor_id: session.user_id,
-						details: result.log,
-						action: "execute",
-					},
-					dbTrx
-				);
-			}
+			// if (action === "run") {
+			// 	await LogRepository.create(
+			// 		{
+			// 			actor_id: session.user_id,
+			// 			details: result.log,
+			// 			action: "execute",
+			// 		},
+			// 		dbTrx
+			// 	);
+			// }
 
 			await dbTrx.commit();
 
-			return result.dst;
+			return result.log;
 		} catch (error) {
 			if (dbTrx) await dbTrx.rollback();
 			throw error;
