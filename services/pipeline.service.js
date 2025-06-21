@@ -159,7 +159,7 @@ class PipelineService {
 
 			await dbTrx.commit();
 
-			return result.log;
+			return result
 		} catch (error) {
 			if (dbTrx) await dbTrx.rollback();
 			throw error;

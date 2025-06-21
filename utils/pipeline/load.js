@@ -131,13 +131,14 @@ async function insertBatch({ type, connection, table, columns, batch }) {
 		}
 
 		case "sybase-odbc": {
-			const placeholders = "(" + columns.map(() => "?").join(", ") + ")";
-			const query =
-				`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
-				batch.map(() => placeholders).join(", ");
-			const values = batch.flatMap((row) => columns.map((col) => row[col]));
-
-			await connection.query(query, values);
+			const valueStrings = batch.map((row) => {
+				const formatted = columns.map((col) => formatSQLValue(row[col]));
+				return `(${formatted.join(", ")})`;
+			});
+			const query = `INSERT INTO ${table} (${columns.join(
+				", "
+			)}) VALUES ${valueStrings.join(", ")}`;
+			await connection.query(query);
 			break;
 		}
 
@@ -164,7 +165,7 @@ function splitIntoChunks(array, size = 500) {
 function formatSQLValue(val) {
 	if (val === null || val === undefined) return "NULL";
 	if (typeof val === "string") return `'${val.replace(/'/g, "''")}'`;
-	if (val instanceof Date) return `'${val.toISOString()}'`;
+	if (val instanceof Date) return `'${val.toISOString().slice(0, 10)}'`;
 	return val;
 }
 

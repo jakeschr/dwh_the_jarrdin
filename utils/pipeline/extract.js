@@ -10,15 +10,15 @@ async function extract({ database, configs, time_threshold }) {
 			let extractedData;
 
 			const { connection, dialect, driver } = database;
-			const type = dialect + "-" + driver;
+			const dialect_driver = dialect + "-" + driver;
 
 			if (database.dialect === "mongodb") {
 				query = buildMongoQuery(config, time_threshold);
 			} else {
-				query = buildSQLQuery(config, time_threshold, type);
+				query = buildSQLQuery(config, time_threshold, dialect_driver);
 			}
 
-			switch (type) {
+			switch (dialect_driver) {
 				case "mysql-native": {
 					const [rows] = await connection.query(query);
 					extractedData = rows;
@@ -86,7 +86,7 @@ async function extract({ database, configs, time_threshold }) {
 	return results;
 }
 
-function buildSQLQuery(config, time_threshold, type) {
+function buildSQLQuery(config, time_threshold, dialect_driver) {
 	try {
 		const { table, columns, filters } = config;
 
@@ -101,7 +101,7 @@ function buildSQLQuery(config, time_threshold, type) {
 						operator: filter.operator,
 						value: filter.value,
 					};
-					return buildSQLFilter(singleFilter, time_threshold, type);
+					return buildSQLFilter(singleFilter, time_threshold, dialect_driver);
 				});
 				return `(${orGroup.join(" OR ")})`;
 			});
@@ -192,7 +192,7 @@ function buildMongoQuery(config, time_threshold) {
 	}
 }
 
-function buildSQLFilter(filter, time_threshold, type) {
+function buildSQLFilter(filter, time_threshold, dialect_driver) {
 	try {
 		const { column, operator, value } = filter;
 
@@ -248,11 +248,11 @@ function buildSQLFilter(filter, time_threshold, type) {
 			case "lte":
 				return `${colExpr} <= ${val}`;
 			case "like": {
-				const keyword = type.type.includes("postgres") ? "ILIKE" : "LIKE";
+				const keyword = dialect_driver.includes("postgres") ? "ILIKE" : "LIKE";
 				return `${colExpr} ${keyword} ${val}`;
 			}
 			case "not_like": {
-				const keyword = type.type.includes("postgres")
+				const keyword = dialect_driver.includes("postgres")
 					? "NOT ILIKE"
 					: "NOT LIKE";
 				return `${colExpr} ${keyword} ${val}`;
