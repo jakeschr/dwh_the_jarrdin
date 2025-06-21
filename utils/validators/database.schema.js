@@ -29,6 +29,13 @@ const databaseSchema = {
 			is_active: Joi.boolean().optional().messages({
 				"boolean.base": `'is_active' must be a boolean.`,
 			}),
+			type: Joi.string()
+				.valid("operational", "lake", "warehouse")
+				.optional()
+				.messages({
+					"string.base": `'type' must be a string.`,
+					"any.only": `'type' must be one of 'operational', 'lake' or 'warehouse'.`,
+				}),
 			page: Joi.number().integer().min(1).optional().messages({
 				"number.base": `'page' must be a number.`,
 				"number.integer": `'page' must be an integer.`,
@@ -104,6 +111,14 @@ const databaseSchema = {
 			options: Joi.object().allow(null).optional().messages({
 				"object.base": `'options' must be a valid JSON object.`,
 			}),
+			type: Joi.string()
+				.valid("operational", "lake", "warehouse")
+				.required()
+				.messages({
+					"string.base": `'type' must be a string.`,
+					"any.only": `'type' must be one of 'operational', 'lake', 'warehouse'.`,
+					"any.required": `'type' is required.`,
+				}),
 		}).messages({
 			"object.base": `request body must be a valid JSON object.`,
 			"any.required": `request body is required.`,
@@ -171,6 +186,13 @@ const databaseSchema = {
 			is_active: Joi.boolean().optional().messages({
 				"boolean.base": `'is_active' must be a boolean.`,
 			}),
+			type: Joi.string()
+				.valid("operational", "lake", "warehouse")
+				.optional()
+				.messages({
+					"string.base": `'type' must be a string.`,
+					"any.only": `'type' must be one of 'operational', 'lake' or 'warehouse'.`,
+				}),
 		})
 			.required()
 			.or(
@@ -186,7 +208,8 @@ const databaseSchema = {
 				"schema",
 				"connection_uri",
 				"options",
-				"is_active"
+				"is_active",
+				"type"
 			)
 			.messages({
 				"object.base": `request body must be a valid JSON object.`,

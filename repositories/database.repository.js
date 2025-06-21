@@ -24,6 +24,7 @@ class DatabaseRepository {
 					"database",
 					"dialect",
 					"is_active",
+					"type",
 				],
 			};
 
@@ -85,6 +86,7 @@ class DatabaseRepository {
 					connection_uri: row.connection_uri,
 					options: JSON.parse(row.options),
 					is_active: row.is_active,
+					type: row.type,
 					timestamp: timeHandler.epochToString(row.timestamp),
 				};
 			};
@@ -129,6 +131,7 @@ class DatabaseRepository {
 					connection_uri: row.connection_uri,
 					options: JSON.parse(row.options),
 					is_active: row.is_active,
+					type: row.type,
 					timestamp: timeHandler.epochToString(row.timestamp),
 				};
 			};

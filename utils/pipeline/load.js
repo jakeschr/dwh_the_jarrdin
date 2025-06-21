@@ -23,7 +23,7 @@ async function load({ database, configs, data }) {
 				await insertBatch({ type, connection, table, columns, batch });
 				loadedData.push(...batch);
 			} catch (err) {
-				errors.push(err.message);
+				errors.push(err);
 			}
 		}
 
@@ -131,12 +131,12 @@ async function insertBatch({ type, connection, table, columns, batch }) {
 		}
 
 		case "sybase-odbc": {
-			const values = batch.flatMap((row) => columns.map((col) => row[col]));
+			const placeholders = "(" + columns.map(() => "?").join(", ") + ")";
 			const query =
 				`INSERT INTO ${table} (${columns.join(", ")}) VALUES ` +
-				batch
-					.map(() => "(" + columns.map(() => "?").join(", ") + ")")
-					.join(", ");
+				batch.map(() => placeholders).join(", ");
+			const values = batch.flatMap((row) => columns.map((col) => row[col]));
+
 			await connection.query(query, values);
 			break;
 		}

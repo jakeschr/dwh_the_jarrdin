@@ -67,6 +67,11 @@ module.exports = ({ GenerateID, Connection, DataTypes }) => {
 				type: DataTypes.BOOLEAN,
 				defaultValue: true,
 			},
+			type: {
+				type: DataTypes.ENUM("operational", "lake", "warehouse"),
+				allowNull: false,
+				defaultValue: "operational",
+			},
 			timestamp: {
 				type: DataTypes.BIGINT,
 				allowNull: false,
