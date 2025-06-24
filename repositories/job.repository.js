@@ -4,8 +4,7 @@ const {
 	Op,
 	JobModel,
 	PipelineModel,
-	PipelineApiModel,
-	ApiModel,
+	DatabaseModel,
 } = require("../models");
 
 const { timeHandler } = require("../utils/time-handler.util.js");
@@ -22,7 +21,7 @@ class JobRepository {
 		try {
 			const options = {
 				where: filters,
-				attributes: ["job_id", "name", "cron", "time_threshold", "status"],
+				attributes: ["job_id", "name", "cron", "time_threshold", "is_active"],
 				include: [
 					{
 						model: PipelineModel,
@@ -39,7 +38,7 @@ class JobRepository {
 					pipeline: job.pipeline.name,
 					cron: job.cron,
 					time_threshold: timeHandler.epochToString(job.time_threshold),
-					status: job.status,
+					is_active: job.is_active,
 				}));
 			};
 
@@ -100,7 +99,7 @@ class JobRepository {
 					cron: job.cron,
 					time_threshold: timeHandler.epochToString(job.time_threshold),
 					pipeline: job.pipeline,
-					status: job.status,
+					is_active: job.is_active,
 					timestamp: timeHandler.epochToString(job.timestamp),
 				};
 			};
@@ -122,51 +121,72 @@ class JobRepository {
 						attributes: ["pipeline_id"],
 						include: [
 							{
-								model: PipelineApiModel,
+								model: DatabaseModel,
 								required: true,
-								attributes: ["configs", "type"],
-								include: [
-									{
-										model: ApiModel,
-										required: true,
-									},
-								],
+								as: "src_db",
+								where: { is_active: true },
+							},
+							{
+								model: DatabaseModel,
+								required: true,
+								as: "dst_db",
+								where: { is_active: true },
 							},
 						],
 					},
 				],
 			});
 
-			const formatResult = (job) => {
-				const pipeline = job.pipeline;
-				const grouped = { src: [], dst: [] };
+			const formatResult = (row) => {
+				const { job_id, is_active, time_threshold, pipeline } = row;
+				const { src_configs, src_db, dst_configs, dst_db } = pipeline;
 
-				for (const item of pipeline.pipeline_apis) {
-					const formatted = {
-						api: {
-							api_id: item.api.api_id,
-							name: item.api.name,
-							base_url: item.api.base_url,
-							headers: JSON.parse(item.api.headers),
-							auth_key: item.api.auth_key,
-							auth_url: item.api.auth_url,
-							auth_type: item.api.auth_type,
-							api_type: item.api.api_type,
-						},
-						configs: JSON.parse(item.configs),
-					};
-
-					if (grouped[item.type]) {
-						grouped[item.type].push(formatted);
-					}
-				}
 				return {
-					job_id: job.job_id,
-					status: job.status,
-					is_preview: false,
-					time_threshold: job.time_threshold,
-					sources: grouped.src,
-					destinations: grouped.dst,
+					job_id: job_id,
+					is_active: is_active,
+					source: {
+						database: {
+							database_id: src_db.database_id,
+							label: src_db.label,
+							database: src_db.database,
+							dialect: src_db.dialect,
+							host: src_db.host,
+							port: src_db.port,
+							username: src_db.username,
+							password: src_db.password
+								? passwordHandler.decryptSymmetric(src_db.password)
+								: null,
+							driver: src_db.driver,
+							dsn: src_db.dsn,
+							schema: src_db.schema,
+							connection_uri: src_db.connection_uri,
+							options: JSON.parse(src_db.options),
+							type: src_db.type,
+						},
+						configs: JSON.parse(src_configs),
+					},
+					destination: {
+						database: {
+							database_id: dst_db.database_id,
+							label: dst_db.label,
+							database: dst_db.database,
+							dialect: dst_db.dialect,
+							host: dst_db.host,
+							port: dst_db.port,
+							username: dst_db.username,
+							password: dst_db.password
+								? passwordHandler.decryptSymmetric(dst_db.password)
+								: null,
+							driver: dst_db.driver,
+							dsn: dst_db.dsn,
+							schema: dst_db.schema,
+							connection_uri: dst_db.connection_uri,
+							options: JSON.parse(dst_db.options),
+							type: dst_db.type,
+						},
+						configs: JSON.parse(dst_configs),
+					},
+					time_threshold: time_threshold,
 				};
 			};
 
@@ -179,7 +199,7 @@ class JobRepository {
 	async findForReload() {
 		try {
 			const rows = await JobModel.findAll({
-				where: { status: "active" },
+				where: { is_active: true },
 				attributes: ["job_id", "cron"],
 				raw: true,
 			});
@@ -194,6 +214,8 @@ class JobRepository {
 		let dbTrx;
 		try {
 			dbTrx = await this.handleTransaction(dbTrxGlobal);
+
+			data.timestamp = timeHandler.nowEpoch();
 
 			const row = await JobModel.create(data, { transaction: dbTrx });
 
@@ -215,6 +237,8 @@ class JobRepository {
 		let dbTrx;
 		try {
 			dbTrx = await this.handleTransaction(dbTrxGlobal);
+
+			data.timestamp = timeHandler.nowEpoch();
 
 			const { job_id, ...job } = data;
 

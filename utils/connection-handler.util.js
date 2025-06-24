@@ -107,7 +107,7 @@ const connectionHandler = {
 				await connection.close();
 			}
 		} catch (error) {
-			console.error(`Error closing ${type} connection:`, error.message);
+			console.error(`Error closing ${dialect} connection:`, error.message);
 		}
 	},
 };

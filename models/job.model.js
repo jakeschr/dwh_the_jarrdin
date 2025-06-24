@@ -29,7 +29,6 @@ module.exports = ({ GenerateID, Connection, DataTypes, PipelineModel }) => {
 			},
 			is_active: {
 				type: DataTypes.BOOLEAN,
-				allowNull: false,
 				defaultValue: true,
 			},
 			timestamp: {

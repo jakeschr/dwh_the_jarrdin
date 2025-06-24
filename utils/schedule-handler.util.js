@@ -1,86 +1,53 @@
 const schedule = require("node-schedule");
 const { JobRepository } = require("../repositories/job.repository.js");
 const { LogRepository } = require("../repositories/log.repository.js");
-const { pipeline } = require("./pipeline/pipeline.js");
+const { runETL } = require("./pipeline/run-etl.js");
 const { timeHandler } = require("./time-handler.util.js");
 
 const scheduleHandler = {
 	createTask(job_id, cron) {
 		try {
 			if (schedule.scheduledJobs[job_id]) {
-				console.error(`SCHEDULER ERROR: job[${job_id}] already exists.`);
-				throw Object.assign(new Error(`job[${job_id}] already exists`), {
-					code: 409,
-				});
+				scheduleHandler.cancelTask(job_id);
 			}
 
 			schedule.scheduleJob(job_id, cron, async () => {
-				try {
-					const startingTime = timeHandler.nowEpoch();
+				let logDetails = null;
+				let jobExecuted = false;
 
+				try {
 					const dataJob = await JobRepository.findForETL(job_id);
 
-					if (!dataJob || dataJob.status !== "active") {
+					if (!dataJob || !dataJob.is_active) {
 						scheduleHandler.cancelTask(job_id);
 						return;
 					}
 
-					let etlResult;
-					try {
-						etlResult = await pipeline(dataJob);
-					} catch (etlError) {
-						console.error(`SCHEDULER ERROR: job[${job_id}]:`, error);
+					const resultETL = await runETL(dataJob);
 
-						const finishingTime = timeHandler.nowEpoch();
-						// Tetap buat log walaupun etl gagal total
-						await LogRepository.create({
-							job_id: dataJob.job_id,
-							message: etlError?.message,
-							details: {
-								start_time: startingTime,
-								end_time: finishingTime,
-								extract_log: null,
-								transform_log: null,
-								load_log: null,
-							},
-							action: "execute",
-							type: "job",
+					logDetails = resultETL.log;
+					jobExecuted = true;
+				} catch (err) {
+					logDetails = err;
+					jobExecuted = true;
+				} finally {
+					if (jobExecuted) {
+						await JobRepository.update({
+							job_id: job_id,
+							time_threshold: timeHandler.nowEpoch(),
 						});
-						return;
+
+						await LogRepository.create({
+							actor_id: job_id,
+							details: logDetails,
+							action: "execute",
+						});
 					}
-
-					// Buat log berdasarkan hasil etl
-					await LogRepository.create({
-						job_id: dataJob.job_id,
-						message: etlResult.log.message,
-						details: {
-							start_time: etlResult.log.start_time,
-							end_time: etlResult.log.end_time,
-							extract_log: etlResult.log.extract_log,
-							transform_log: etlResult.log.transform_log,
-							load_log: etlResult.log.load_log,
-						},
-						action: "execute",
-						type: "job",
-					});
-
-					// Update time_threshold hanya jika status bukan error
-					await JobRepository.update({
-						job_id: dataJob.job_id,
-						time_threshold: etlResult.log.start_time,
-					});
-
-					console.error(
-						`SCHEDULER LOG: Job[${job_id}] executed siccessfully [${timeHandler.nowString()}]`
-					);
-				} catch (error) {
-					console.error(`SCHEDULER ERROR: job[${job_id}]:`, error.message);
 				}
 			});
 
 			return true;
 		} catch (error) {
-			console.error(error);
 			throw error;
 		}
 	},
@@ -91,28 +58,7 @@ const scheduleHandler = {
 				const job = schedule.scheduledJobs[job_id];
 
 				job.cancel();
-
-				console.error(`SCHEDULER LOG: job[${job_id}] cancel successfully.`);
-			} else {
-				console.error(`SCHEDULER ERROR: job[${job_id}] not found.`);
 			}
-
-			return true;
-		} catch (error) {
-			console.error(error);
-			throw error;
-		}
-	},
-
-	async reloadTask() {
-		try {
-			const jobs = await JobRepository.findForReload();
-
-			jobs.forEach((job) => {
-				scheduleHandler.createTask(job.job_id, job.cron);
-			});
-
-			console.error(`SCHEDULER LOG: Job reloaded successfully.`);
 
 			return true;
 		} catch (error) {
