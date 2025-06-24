@@ -3,7 +3,10 @@ const {
 } = require("../repositories/database.repository.js");
 const { LogRepository } = require("../repositories/log.repository.js");
 
-const { connectionHandler } = require("../utils/connection-handler.util");
+const {
+	connectionHandler,
+	buildCreateTableQuery,
+} = require("../utils/connection-handler.util");
 const { passwordHandler } = require("../utils/password-handler.util");
 const { filterHandler } = require("../utils/filter-handler.util.js");
 const { Connection } = require("../models/index.js");
@@ -200,6 +203,48 @@ class DatabaseService {
 				status: "success",
 				message: `Berhasil mengambil daftar tabel dari ${config.label}`,
 				data: tableList,
+			};
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	async createTable(data) {
+		try {
+			// Ambil konfigurasi koneksi dari repository
+			const config = await DatabaseRepository.findForConnection(
+				data.database_id
+			);
+
+			if (config.type !== "lake") {
+				throw Object.assign(
+					new Error(
+						"Hanya database dengan tipe 'lake' yang diperbolehkan membuat tabel."
+					),
+					{ code: 400 }
+				);
+			}
+
+			// Dekripsi password jika ada
+			if (config.password) {
+				config.password = passwordHandler.decryptSymmetric(config.password);
+			}
+
+			// Buka koneksi
+			const connection = await connectionHandler.open(config);
+
+			// Bangun query CREATE TABLE
+			const query = buildCreateTableQuery(data);
+
+			// Eksekusi query
+			await connection.query(query);
+
+			// Tutup koneksi
+			await connectionHandler.close(connection, config.dialect);
+
+			return {
+				status: "success",
+				message: `Tabel '${data.table}' berhasil dibuat.`,
 			};
 		} catch (error) {
 			throw error;

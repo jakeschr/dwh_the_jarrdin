@@ -207,6 +207,44 @@ class DatabaseController {
 			});
 		}
 	}
+
+	async createTable(req, res) {
+		try {
+			let result;
+			switch (req.params.version) {
+				case "v1":
+					const { error } = Validator.createTable(req.body);
+
+					if (error) {
+						throw Object.assign(new Error(error.details[0].message), {
+							code: 400,
+						});
+					}
+
+					result = await DatabaseService.createTable(req.body, req.user);
+
+					break;
+				default:
+					throw Object.assign(
+						new Error(`Unsupported endpoint version: ${req.params.version}`),
+						{
+							code: 400,
+						}
+					);
+			}
+
+			responseHandler(res, {
+				code: 200,
+				data: result,
+			});
+		} catch (error) {
+			console.error(error);
+			responseHandler(res, {
+				code: error.code || 500,
+				errors: error.message,
+			});
+		}
+	}
 }
 
 module.exports = { DatabaseController: new DatabaseController() };

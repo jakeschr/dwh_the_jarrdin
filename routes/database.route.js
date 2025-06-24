@@ -11,6 +11,12 @@ router.get(
 );
 
 router.get(
+	"/:version/database/create-table",
+	authorization, //
+	DatabaseController.createTable
+);
+
+router.get(
 	"/:version/database",
 	authorization, //
 	DatabaseController.findSummary

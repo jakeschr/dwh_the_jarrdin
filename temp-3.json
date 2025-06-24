@@ -1,0 +1,28 @@
+{
+	"database_id": "db-123",
+	"tables": {
+		"name": "apartment_",
+		"pk": ["id"],
+		"unique": [["email"]],
+		"fk": [
+			{
+				"column": "role_id",
+				"references": "roles(id)",
+				"on_delete": "CASCADE",
+				"on_update": "CASCADE"
+			}
+		],
+		"columns": [
+			{ "name": "id", "type": "INT", "null": false, "auto_increment": true },
+			{ "name": "email", "type": "VARCHAR(255)", "null": false },
+			{ "name": "name", "type": "VARCHAR(100)", "null": true },
+			{
+				"name": "created_at",
+				"type": "DATETIME",
+				"null": false,
+				"default": "CURRENT_TIMESTAMP"
+			},
+			{ "name": "role_id", "type": "INT", "null": false }
+		]
+	}
+}
