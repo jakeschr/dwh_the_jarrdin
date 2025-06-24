@@ -18,7 +18,10 @@
 					{
 						"fields": ["timestamp"],
 						"operator": "gte",
-						"value": "DYNAMIC(1735693200000)"
+						"value": {
+							"source": "time_threshold",
+							"default": 1735693200000
+						}
 					}
 				]
 			},

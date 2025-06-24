@@ -67,7 +67,18 @@ const filterObj = {
 			Joi.string(),
 			Joi.number(),
 			Joi.boolean(),
-			Joi.date(),
+			Joi.object({
+				source: Joi.valid("time_threshold").required().messages({
+					"string.base": `'value.source' must be a string in dynamic filter.`,
+					"any.only": `'value.source' must be 'time_threshold' in dynamic filter.`,
+					"any.required": `'value.source' is required in dynamic filter.`,
+				}),
+				default: Joi.alternatives([Joi.string(), Joi.number()])
+					.required()
+					.messages({
+						"any.required": `'value.default' is required in dynamic filter.`,
+					}),
+			}),
 		])
 			.required()
 			.messages({
