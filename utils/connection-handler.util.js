@@ -8,90 +8,88 @@ const oracledb = require("oracledb");
 const connectionHandler = {
 	async open(config) {
 		const { dialect, driver } = config;
+		const type = `${dialect}-${driver}`;
 
 		try {
-			// --- MongoDB (native only) ---
-			if (dialect === "mongodb") {
-				const uri = config.connection_uri;
-				if (!uri) throw new Error("MongoDB requires 'connection_uri'");
-				const connection = new MongoClient(uri);
-				await connection.connect();
-				return connection;
-			}
-
-			// --- MySQL (native) ---
-			if (dialect === "mysql" && driver === "native") {
-				const connection = await mysql.createConnection({
-					host: config.host,
-					port: config.port,
-					user: config.username,
-					password: config.password,
-					database: config.database,
-					...config.options,
-				});
-				return connection;
-			}
-
-			// --- PostgreSQL (native) ---
-			if (dialect === "postgres" && driver === "native") {
-				const connection = new PgClient({
-					host: config.host,
-					port: config.port,
-					user: config.username,
-					password: config.password,
-					database: config.database,
-					...config.options,
-				});
-				await connection.connect();
-				return connection;
-			}
-
-			// --- SQL Server (native) ---
-			if (dialect === "sqlserver" && driver === "native") {
-				const connection = await sql.connect({
-					server: config.host,
-					port: config.port,
-					user: config.username,
-					password: config.password,
-					database: config.database,
-					options: {
-						enableArithAbort: true,
-						trustServerCertificate: true,
+			switch (type) {
+				// --- MySQL ---
+				case "mysql-native":
+					return await mysql.createConnection({
+						host: config.host,
+						port: config.port,
+						user: config.username,
+						password: config.password,
+						database: config.database,
 						...config.options,
-					},
-				});
-				return connection;
+					});
+
+				case "mysql-odbc":
+					return await connectODBC(config);
+
+				// --- PostgreSQL ---
+				case "postgres-native": {
+					const connection = new PgClient({
+						host: config.host,
+						port: config.port,
+						user: config.username,
+						password: config.password,
+						database: config.database,
+						...config.options,
+					});
+					await connection.connect();
+					return connection;
+				}
+
+				case "postgres-odbc":
+					return await connectODBC(config);
+
+				// --- SQL Server ---
+				case "sqlserver-native":
+					return await sql.connect({
+						server: config.host,
+						port: config.port,
+						user: config.username,
+						password: config.password,
+						database: config.database,
+						options: {
+							enableArithAbort: true,
+							trustServerCertificate: true,
+							...config.options,
+						},
+					});
+
+				case "sqlserver-odbc":
+					return await connectODBC(config);
+
+				// --- Oracle ---
+				case "oracle-native":
+					return await oracledb.getConnection({
+						user: config.username,
+						password: config.password,
+						connectString: `${config.host}:${config.port}/${config.database}`,
+						...config.options,
+					});
+
+				case "oracle-odbc":
+					return await connectODBC(config);
+
+				// --- Sybase via ODBC ---
+				case "sybase-odbc":
+					return await connectODBC(config);
+
+				// --- MongoDB ---
+				case "mongodb-native":
+					if (!config.connection_uri)
+						throw new Error("MongoDB requires 'connection_uri'");
+					const mongo = new MongoClient(config.connection_uri);
+					await mongo.connect();
+					return mongo;
+
+				default:
+					throw new Error(
+						`Unsupported combination: dialect=${dialect}, driver=${driver}`
+					);
 			}
-
-			// --- Oracle (native) ---
-			if (dialect === "oracle" && driver === "native") {
-				const connection = await oracledb.getConnection({
-					user: config.username,
-					password: config.password,
-					connectString: `${config.host}:${config.port}/${config.database}`,
-					...config.options,
-				});
-
-				return connection;
-			}
-
-			// --- Sybase / SQL Server / Oracle via ODBC ---
-			if (driver === "odbc") {
-				if (!config.dsn) throw new Error("ODBC connection requires 'dsn'");
-
-				// Buat connection string dinamis
-				let connStr = `DSN=${config.dsn}`;
-				if (config.username) connStr += `;UID=${config.username}`;
-				if (config.password) connStr += `;PWD=${config.password}`;
-
-				const connection = await odbc.connect(connStr);
-
-				return connection;
-			}
-
-			throw new Error(
-				`Unsupported combination: dialect=${dialect}, driver=${driver}`
-			);
 		} catch (err) {
 			throw new Error(
 				`Failed to connect to ${dialect} (${driver}): ${err.message}`
@@ -103,13 +101,26 @@ const connectionHandler = {
 		try {
 			if (dialect === "mysql" || dialect === "postgres") {
 				await connection.end();
-			} else {
+			} else if (dialect === "mongodb") {
 				await connection.close();
+			} else if (typeof connection.close === "function") {
+				await connection.close();
+			} else if (typeof connection.disconnect === "function") {
+				await connection.disconnect();
 			}
 		} catch (error) {
 			console.error(`Error closing ${dialect} connection:`, error.message);
 		}
 	},
 };
+
+// Fungsi bantu koneksi ODBC
+async function connectODBC(config) {
+	if (!config.dsn) throw new Error("ODBC connection requires 'dsn'");
+	let connStr = `DSN=${config.dsn}`;
+	if (config.username) connStr += `;UID=${config.username}`;
+	if (config.password) connStr += `;PWD=${config.password}`;
+	return await odbc.connect(connStr);
+}
 
 module.exports = { connectionHandler };
