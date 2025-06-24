@@ -134,7 +134,7 @@
 					{
 						"type": "time-format",
 						"columns": ["start_date", "end_date"],
-						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
+						"old_format": "YYYY-MM-DD",
 						"new_format": "YYYY-MM-DD",
 						"order": 1
 					}
@@ -156,7 +156,7 @@
 					{
 						"type": "time-format",
 						"columns": ["due_date"],
-						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
+						"old_format": "YYYY-MM-DD",
 						"new_format": "YYYY-MM-DD",
 						"order": 1
 					}
@@ -177,7 +177,7 @@
 					{
 						"type": "time-format",
 						"columns": ["payment_date"],
-						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
+						"old_format": "YYYY-MM-DD",
 						"new_format": "YYYY-MM-DD",
 						"order": 1
 					}

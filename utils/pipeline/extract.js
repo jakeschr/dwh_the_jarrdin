@@ -18,6 +18,8 @@ async function extract({ database, configs, time_threshold }) {
 				query = buildSQLQuery(config, time_threshold, dialect_driver);
 			}
 
+			console.log(query);
+
 			switch (dialect_driver) {
 				case "mysql-native": {
 					const [rows] = await connection.query(query);
@@ -194,73 +196,66 @@ function buildMongoQuery(config, time_threshold) {
 
 function buildSQLFilter(filter, time_threshold, dialect_driver) {
 	try {
-		const { column, operator, value } = filter;
-
-		// Tentukan nama kolom final (colExpr)
+		let { column, operator, value } = filter;
 		const colExpr = column;
 
-		// Tangani nilai DYNAMIC(...) jika ada
-		let val = value;
+		// 1. Jika value adalah objek dinamis
+		if (typeof value === "object" && value?.source === "time_threshold") {
+			// Tentukan nilai default
+			const defaultVal = value.default;
 
-		if (typeof val === "string" && /^DYNAMIC\((.+)\)$/.test(val)) {
-			let extracted = val.match(/^DYNAMIC\((.+)\)$/)[1];
-
-			const isNumeric = !isNaN(extracted) && !isNaN(parseFloat(extracted));
-			if (isNumeric) extracted = Number(extracted);
-
-			const format = timeHandler.getFormat(extracted);
-
+			// Jika time_threshold tersedia, gunakan sesuai format default
 			if (time_threshold != null) {
+				const format = timeHandler.getFormat(defaultVal);
 				if (format === "epoch_ms") {
-					val = time_threshold;
+					value = time_threshold;
 				} else if (format === "epoch_s") {
-					val = Math.floor(time_threshold / 1000);
+					value = Math.floor(time_threshold / 1000);
 				} else {
-					val = timeHandler.epochToString(time_threshold, format);
+					value = timeHandler.epochToString(time_threshold, format);
 				}
 			} else {
-				val =
-					format === "epoch_ms" || format === "epoch_s"
-						? Number(extracted)
-						: extracted;
+				// Gunakan nilai default langsung
+				value = defaultVal;
 			}
 		}
 
-		// Format nilai SQL
-		if (typeof val === "string") {
-			val = `'${val}'`;
-		} else if (val === null) {
-			val = "NULL";
+		// 2. Format value untuk SQL (kecuali untuk BETWEEN/IN yang nanti ditangani khusus)
+		let formattedVal = value;
+		if (typeof value === "string") {
+			formattedVal = `'${value}'`;
+		} else if (value === null) {
+			formattedVal = "NULL";
 		}
 
-		// Khusus operator IN dan BETWEEN gunakan value asli (tanpa overwrite val)
+		// 3. Bangun filter SQL
 		switch (operator) {
 			case "eq":
-				return `${colExpr} = ${val}`;
+				return `${colExpr} = ${formattedVal}`;
 			case "ne":
-				return `${colExpr} != ${val}`;
+				return `${colExpr} != ${formattedVal}`;
 			case "gt":
-				return `${colExpr} > ${val}`;
+				return `${colExpr} > ${formattedVal}`;
 			case "lt":
-				return `${colExpr} < ${val}`;
+				return `${colExpr} < ${formattedVal}`;
 			case "gte":
-				return `${colExpr} >= ${val}`;
+				return `${colExpr} >= ${formattedVal}`;
 			case "lte":
-				return `${colExpr} <= ${val}`;
+				return `${colExpr} <= ${formattedVal}`;
 			case "like": {
 				const keyword = dialect_driver.includes("postgres") ? "ILIKE" : "LIKE";
-				return `${colExpr} ${keyword} ${val}`;
+				return `${colExpr} ${keyword} ${formattedVal}`;
 			}
 			case "not_like": {
 				const keyword = dialect_driver.includes("postgres")
 					? "NOT ILIKE"
 					: "NOT LIKE";
-				return `${colExpr} ${keyword} ${val}`;
+				return `${colExpr} ${keyword} ${formattedVal}`;
 			}
 			case "is":
-				return `${colExpr} IS ${val}`;
+				return `${colExpr} IS ${formattedVal}`;
 			case "not":
-				return `${colExpr} IS NOT ${val}`;
+				return `${colExpr} IS NOT ${formattedVal}`;
 			case "in":
 				return `${colExpr} IN (${value.map((v) => `'${v}'`).join(", ")})`;
 			case "not_in":
@@ -276,5 +271,90 @@ function buildSQLFilter(filter, time_threshold, dialect_driver) {
 		throw error;
 	}
 }
+
+// function buildSQLFilter(filter, time_threshold, dialect_driver) {
+// 	try {
+// 		const { column, operator, value } = filter;
+
+// 		// Tentukan nama kolom final (colExpr)
+// 		const colExpr = column;
+
+// 		// Tangani nilai DYNAMIC(...) jika ada
+// 		let val = value;
+
+// 		if (typeof val === "string" && /^DYNAMIC\((.+)\)$/.test(val)) {
+// 			let extracted = val.match(/^DYNAMIC\((.+)\)$/)[1];
+
+// 			const isNumeric = !isNaN(extracted) && !isNaN(parseFloat(extracted));
+// 			if (isNumeric) extracted = Number(extracted);
+
+// 			const format = timeHandler.getFormat(extracted);
+
+// 			if (time_threshold != null) {
+// 				if (format === "epoch_ms") {
+// 					val = time_threshold;
+// 				} else if (format === "epoch_s") {
+// 					val = Math.floor(time_threshold / 1000);
+// 				} else {
+// 					val = timeHandler.epochToString(time_threshold, format);
+// 				}
+// 			} else {
+// 				val =
+// 					format === "epoch_ms" || format === "epoch_s"
+// 						? Number(extracted)
+// 						: extracted;
+// 			}
+// 		}
+
+// 		// Format nilai SQL
+// 		if (typeof val === "string") {
+// 			val = `'${val}'`;
+// 		} else if (val === null) {
+// 			val = "NULL";
+// 		}
+
+// 		// Khusus operator IN dan BETWEEN gunakan value asli (tanpa overwrite val)
+// 		switch (operator) {
+// 			case "eq":
+// 				return `${colExpr} = ${val}`;
+// 			case "ne":
+// 				return `${colExpr} != ${val}`;
+// 			case "gt":
+// 				return `${colExpr} > ${val}`;
+// 			case "lt":
+// 				return `${colExpr} < ${val}`;
+// 			case "gte":
+// 				return `${colExpr} >= ${val}`;
+// 			case "lte":
+// 				return `${colExpr} <= ${val}`;
+// 			case "like": {
+// 				const keyword = dialect_driver.includes("postgres") ? "ILIKE" : "LIKE";
+// 				return `${colExpr} ${keyword} ${val}`;
+// 			}
+// 			case "not_like": {
+// 				const keyword = dialect_driver.includes("postgres")
+// 					? "NOT ILIKE"
+// 					: "NOT LIKE";
+// 				return `${colExpr} ${keyword} ${val}`;
+// 			}
+// 			case "is":
+// 				return `${colExpr} IS ${val}`;
+// 			case "not":
+// 				return `${colExpr} IS NOT ${val}`;
+// 			case "in":
+// 				return `${colExpr} IN (${value.map((v) => `'${v}'`).join(", ")})`;
+// 			case "not_in":
+// 				return `${colExpr} NOT IN (${value.map((v) => `'${v}'`).join(", ")})`;
+// 			case "between":
+// 				return `${colExpr} BETWEEN '${value[0]}' AND '${value[1]}'`;
+// 			case "not_between":
+// 				return `${colExpr} NOT BETWEEN '${value[0]}' AND '${value[1]}'`;
+// 			default:
+// 				throw new Error(`Unsupported operator: ${operator}`);
+// 		}
+// 	} catch (error) {
+// 		throw error;
+// 	}
+// }
 
 module.exports = { extract };

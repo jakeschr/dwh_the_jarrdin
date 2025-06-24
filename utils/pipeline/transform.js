@@ -82,7 +82,7 @@ function transform({ data, configs, is_preview }) {
 						case "time-format":
 							data.dst[table] = timeFormat({
 								data: data.dst[table],
-								column: action.column,
+								columns: action.columns,
 								old_format: action.old_format,
 								new_format: action.new_format,
 							});
