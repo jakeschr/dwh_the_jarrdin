@@ -1,41 +1,37 @@
 {
-	"name": "Vinco to Staging",
-	"description": "Testing 1",
+	"pipeline_id": "pln-mc7prhxu-739866",
+	"name": "OPT (sybase) to LAKE (mysql)",
+	"description": null,
 	"source": {
-		"database_id": "dtb-mc3bgcmx-75a02a",
+		"database_id": "dtb-mc3dxk88-f528a9",
 		"configs": [
 			{
 				"table": "apartment",
-				"columns": [
-					"apartment_id",
-					"tower",
-					"floor",
-					"unit",
-					"area",
-					"timestamp"
-				],
+				"columns": ["apartment_id", "tower", "floor", "unit", "area"],
 				"filters": [
 					{
 						"fields": ["timestamp"],
 						"operator": "gte",
 						"value": {
 							"source": "time_threshold",
-							"default": 1735693200000
+							"default": 1735689600000
 						}
 					}
 				]
 			},
 			{
 				"table": "occupant",
-				"columns": [
-					"occupant_id",
-					"name",
-					"email",
-					"phone",
-					"address",
-					"timestamp"
-				],
-				"filters": null
+				"columns": ["occupant_id", "name", "email", "phone", "address"],
+				"filters": [
+					{
+						"fields": ["timestamp"],
+						"operator": "gte",
+						"value": {
+							"source": "time_threshold",
+							"default": 1735689600000
+						}
+					}
+				]
 			},
 			{
 				"table": "contract",
@@ -47,10 +43,18 @@
 					"end_date",
 					"amount",
 					"type",
-					"status",
-					"timestamp"
+					"status"
 				],
-				"filters": null
+				"filters": [
+					{
+						"fields": ["timestamp"],
+						"operator": "gte",
+						"value": {
+							"source": "time_threshold",
+							"default": 1735689600000
+						}
+					}
+				]
 			},
 			{
 				"table": "invoice",
@@ -60,10 +64,18 @@
 					"due_date",
 					"amount",
 					"type",
-					"status",
-					"timestamp"
+					"status"
 				],
-				"filters": null
+				"filters": [
+					{
+						"fields": ["timestamp"],
+						"operator": "gte",
+						"value": {
+							"source": "time_threshold",
+							"default": 1735689600000
+						}
+					}
+				]
 			},
 			{
 				"table": "payment",
@@ -72,40 +84,34 @@
 					"invoice_id",
 					"payment_date",
 					"payment_amount",
-					"payment_method",
-					"timestamp"
+					"payment_method"
 				],
-				"filters": null
+				"filters": [
+					{
+						"fields": ["timestamp"],
+						"operator": "gte",
+						"value": {
+							"source": "time_threshold",
+							"default": 1735689600000
+						}
+					}
+				]
 			}
 		]
 	},
 	"destination": {
-		"database_id": "dtb-mc3dxk88-f528a9",
+		"database_id": "dtb-mc7poch1-ae4ba3",
 		"configs": [
 			{
 				"table": "apartment",
-				"columns": [
-					"apartment_id",
-					"tower",
-					"floor",
-					"unit",
-					"area",
-					"timestamp"
-				],
+				"columns": ["apartment_id", "tower", "floor", "unit", "area"],
 				"init_value": "src.apartment",
 				"order": 1,
 				"transforms": null
 			},
 			{
 				"table": "occupant",
-				"columns": [
-					"occupant_id",
-					"name",
-					"email",
-					"phone",
-					"address",
-					"timestamp"
-				],
+				"columns": ["occupant_id", "name", "email", "phone", "address"],
 				"init_value": "src.occupant",
 				"order": 2,
 				"transforms": null
@@ -120,8 +126,7 @@
 					"end_date",
 					"amount",
 					"type",
-					"status",
-					"timestamp"
+					"status"
 				],
 				"init_value": "src.contract",
 				"order": 3,
@@ -135,8 +140,7 @@
 					"due_date",
 					"amount",
 					"type",
-					"status",
-					"timestamp"
+					"status"
 				],
 				"init_value": "src.invoice",
 				"order": 4,
@@ -149,8 +153,7 @@
 					"invoice_id",
 					"payment_date",
 					"payment_amount",
-					"payment_method",
-					"timestamp"
+					"payment_method"
 				],
 				"init_value": "src.payment",
 				"order": 5,
