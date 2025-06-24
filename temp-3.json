@@ -1,28 +1,45 @@
 {
-	"database_id": "db-123",
-	"tables": {
-		"name": "apartment_",
-		"pk": ["id"],
-		"unique": [["email"]],
-		"fk": [
-			{
-				"column": "role_id",
-				"references": "roles(id)",
-				"on_delete": "CASCADE",
-				"on_update": "CASCADE"
-			}
-		],
-		"columns": [
-			{ "name": "id", "type": "INT", "null": false, "auto_increment": true },
-			{ "name": "email", "type": "VARCHAR(255)", "null": false },
-			{ "name": "name", "type": "VARCHAR(100)", "null": true },
-			{
-				"name": "created_at",
-				"type": "DATETIME",
-				"null": false,
-				"default": "CURRENT_TIMESTAMP"
-			},
-			{ "name": "role_id", "type": "INT", "null": false }
-		]
-	}
+	"database_id": "dtb-mc7poch1-ae4ba3",
+	"tables": [
+		{
+			"name": "apartment",
+			"pk": ["apartment_id", "timestamp"],
+			"columns": [
+				{ "name": "apartment_id", "type": "VARCHAR(50)", "null": false },
+				{ "name": "tower", "type": "VARCHAR(20)", "null": false },
+				{ "name": "floor", "type": "VARCHAR(20)", "null": false },
+				{ "name": "unit", "type": "VARCHAR(20)", "null": false },
+				{ "name": "type", "type": "VARCHAR(20)", "null": false },
+				{ "name": "area", "type": "INT(11)", "null": false },
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+			],
+			"order": 1
+		},
+		{
+			"name": "occupant",
+			"pk": ["occupant_id", "timestamp"],
+			"columns": [
+				{ "name": "occupant_id", "type": "VARCHAR(50)", "null": false },
+				{ "name": "name", "type": "VARCHAR(200)", "null": false },
+				{ "name": "email", "type": "VARCHAR(200)", "null": false },
+				{ "name": "phone", "type": "VARCHAR(20)", "null": false },
+				{ "name": "address", "type": "TEXT", "null": false },
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+			],
+			"order": 2
+		},
+		{
+			"name": "contract",
+			"pk": ["contract_id", "timestamp"],
+			"columns": [
+				{ "name": "contract_id", "type": "VARCHAR(50)", "null": false },
+				{ "name": "name", "type": "VARCHAR(200)", "null": false },
+				{ "name": "email", "type": "VARCHAR(200)", "null": false },
+				{ "name": "phone", "type": "VARCHAR(20)", "null": false },
+				{ "name": "address", "type": "TEXT", "null": false },
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+			],
+			"order": 1
+		}
+	]
 }
