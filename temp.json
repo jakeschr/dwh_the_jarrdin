@@ -1,32 +1,17 @@
-[
-	{
-		"status": "success",
-		"name": "apartment",
-		"count": 500,
-		"message": "500 records extracted."
-	},
-	{
-		"status": "success",
-		"name": "occupant",
-		"count": 300,
-		"message": "300 records extracted."
-	},
-	{
-		"status": "success",
-		"name": "contract",
-		"count": 500,
-		"message": "500 records extracted."
-	},
-	{
-		"status": "success",
-		"name": "invoice",
-		"count": 1167,
-		"message": "1167 records extracted."
-	},
-	{
-		"status": "success",
-		"name": "payment",
-		"count": 577,
-		"message": "577 records extracted."
-	}
-]
+{
+	"database_id": "dtb-mc3bgcmx-75a02a",
+	"label": "WAREHOUSE",
+	"database": "jakeschr_the_jarrdin_dwh",
+	"dialect": "mysql",
+	"host": "jakeschr.com",
+	"port": 3306,
+	"username": "jakeschr_the_jarrdin_dwh",
+	"password": "kXYfw92WN2AYu4rvKbUU",
+	"driver": "native",
+	"dsn": null,
+	"schema": null,
+	"connection_uri": null,
+	"options": null,
+	"is_active": true,
+	"type": "warehouse"
+}

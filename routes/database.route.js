@@ -4,24 +4,36 @@ const { DatabaseController } = require("../controllers/database.controller");
 
 const router = express.Router();
 
-router.get("/:version/database", authorization, DatabaseController.findSummary);
+router.get(
+	"/:version/database/connection-test/:id",
+	authorization, //
+	DatabaseController.connectionTest
+);
+
+router.get(
+	"/:version/database",
+	authorization, //
+	DatabaseController.findSummary
+);
 router.get(
 	"/:version/database/:id",
 	authorization,
 	DatabaseController.findDetail
 );
-router.post("/:version/database", authorization, DatabaseController.create);
-router.patch("/:version/database", authorization, DatabaseController.update);
+router.post(
+	"/:version/database",
+	authorization, //
+	DatabaseController.create
+);
+router.patch(
+	"/:version/database",
+	authorization, //
+	DatabaseController.update
+);
 router.delete(
 	"/:version/database/:id",
-	authorization,
+	authorization, //
 	DatabaseController.delete
-);
-
-router.get(
-	"/:version/database/connection-test/:id",
-	authorization,
-	DatabaseController.connectionTest
 );
 
 module.exports = router;

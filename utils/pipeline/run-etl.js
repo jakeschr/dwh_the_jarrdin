@@ -90,14 +90,18 @@ const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 	} catch (error) {
 		throw error;
 	} finally {
-		await connectionHandler.close(
-			source.database.connection,
-			source.database.dialect
-		);
-		await connectionHandler.close(
-			destination.database.connection,
-			destination.database.dialect
-		);
+		if (source?.database?.connection) {
+			await connectionHandler.close(
+				source.database.connection,
+				source.database.dialect
+			);
+		}
+		if (destination?.database?.connection) {
+			await connectionHandler.close(
+				destination.database.connection,
+				destination.database.dialect
+			);
+		}
 	}
 };
 

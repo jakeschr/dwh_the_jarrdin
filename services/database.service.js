@@ -68,7 +68,7 @@ class DatabaseService {
 			dbTrx = await Connection.transaction();
 
 			if (data.password) {
-				data.password = await passwordHandler.encrypt(data.password);
+				data.password = passwordHandler.encryptSymmetric(data.password);
 			}
 
 			const updatedRow = await DatabaseRepository.update(data, dbTrx);
