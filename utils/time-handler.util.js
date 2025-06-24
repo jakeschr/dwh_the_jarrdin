@@ -20,24 +20,85 @@ const KNOWN_FORMATS = [
 const SUPPORTED_FORMATS = [...KNOWN_FORMATS, "epoch_ms", "epoch_s"];
 
 const timeHandler = {
-	// String → Epoch ms
-	stringToEpoch: (string_input, string_format = DEFAULT_FORMAT) => {
-		const parsed = dayjs(string_input, string_format, true);
-		if (!parsed.isValid()) {
-			throw new Error(
-				`Invalid date string or format: "${string_input}" (${string_format})`
-			);
+	// String → String
+	stringToString: (
+		string_input,
+		from_format = DEFAULT_FORMAT,
+		to_format = DEFAULT_FORMAT
+	) => {
+		try {
+			const parsed = dayjs(string_input, from_format, true);
+
+			if (!parsed.isValid()) {
+				throw new Error(
+					`Invalid date string or format: "${string_input}" (${from_format})`
+				);
+			}
+
+			return parsed.format(to_format);
+		} catch (error) {
+			throw error;
 		}
-		return parsed.valueOf();
 	},
 
-	// Epoch ms → Formatted String
-	epochToString: (epoch_input, string_format = DEFAULT_FORMAT) => {
-		const parsed = dayjs(epoch_input);
-		if (!parsed.isValid()) {
+	// String → Epoch
+	stringToEpoch: (
+		string_input,
+		string_format = DEFAULT_FORMAT,
+		epoch_format = "epoch_ms"
+	) => {
+		try {
+			const parsed = dayjs(string_input, string_format, true);
+
+			if (!parsed.isValid()) {
+				throw new Error(
+					`Invalid date string or format: "${string_input}" (${string_format})`
+				);
+			}
+
+			const result = parsed.valueOf();
+
+			return epoch_format === "epoch_ms" ? result : result / 1000;
+		} catch (error) {
+			throw error;
+		}
+	},
+
+	// Epoch → Formatted String
+	epochToString: (
+		epoch_input,
+		string_format = DEFAULT_FORMAT,
+		epoch_format = "epoch_ms"
+	) => {
+		try {
+			const parsed = dayjs(
+				epoch_format === "epoch_ms" ? epoch_input : epoch_input * 1000
+			);
+
+			if (!parsed.isValid()) {
+				throw new Error(`Invalid epoch input: ${epoch_input}`);
+			}
+
+			return parsed.format(string_format);
+		} catch (error) {
+			throw error;
+		}
+	},
+
+	// Epoch → Epoch
+	epochToEpoch: (
+		epoch_input,
+		from_format = "epoch_ms",
+		to_format = "epoch_s"
+	) => {
+		const baseEpoch =
+			from_format === "epoch_ms" ? epoch_input : epoch_input * 1000;
+
+		if (typeof baseEpoch !== "number" || isNaN(baseEpoch)) {
 			throw new Error(`Invalid epoch input: ${epoch_input}`);
 		}
-		return parsed.format(string_format);
+
+		return to_format === "epoch_ms" ? baseEpoch : Math.floor(baseEpoch / 1000);
 	},
 
 	// Sekarang dalam epoch ms
@@ -118,6 +179,7 @@ const timeHandler = {
 				code: 400,
 			});
 		}
+
 		return true;
 	},
 };

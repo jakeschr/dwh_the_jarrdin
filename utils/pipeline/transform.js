@@ -1,4 +1,5 @@
 const math = require("mathjs");
+const { timeHandler } = require("../time-handler.util");
 
 function transform({ data, configs, is_preview }) {
 	data.getTableByPath = function (path) {
@@ -77,6 +78,13 @@ function transform({ data, configs, is_preview }) {
 								column_target: action.target,
 								column_group_by: action.group_by,
 								as: action.as,
+							});
+						case "time-format":
+							data.dst[table] = timeFormat({
+								data: data.dst[table],
+								column: action.column,
+								old_format: action.old_format,
+								new_format: action.new_format,
 							});
 							break;
 						default:
@@ -506,6 +514,73 @@ function aggregate({
 		return result;
 	} catch (error) {
 		throw new Error(`AGGREGATE ERROR: ${error.message}`);
+	}
+}
+
+/**
+ * Mengubah format waktu pada kolom tertentu dalam array data.
+ * Format asal dan tujuan dapat berupa format string (misal: "DD/MM/YYYY", "YYYY-MM-DD"),
+ * atau format waktu numerik seperti epoch dalam milidetik (`epoch_ms`) dan detik (`epoch_s`).
+ *
+ * Jika `old_format` tidak diberikan, maka sistem akan otomatis mendeteksi format asal dari nilai waktu.
+ *
+ * Contoh penggunaan:
+ *  timeFormat({
+ *    data: [...],
+ *    column: "created_at",
+ *    old_format: "YYYY-MM-DDTHH:mm:ssZ",
+ *    new_format: "DD/MM/YYYY"
+ *  })
+ *
+ * Contoh lain (konversi ke epoch ms):
+ *  timeFormat({
+ *    data: [...],
+ *    column: "created_at",
+ *    new_format: "epoch_ms"
+ *  })
+ *
+ * @param {Object} param0 - Parameter konfigurasi transformasi.
+ * @param {Array<Object>} param0.data - Array objek data yang akan diproses.
+ * @param {string} param0.column - Nama kolom yang akan diubah format waktunya.
+ * @param {string} [param0.old_format] - Format waktu asal (jika tidak diberikan, akan dideteksi otomatis).
+ * @param {string} param0.new_format - Format waktu tujuan (string format atau "epoch_ms"/"epoch_s").
+ * @returns {Array<Object>} - Data yang telah diubah format waktu pada kolom tertentu.
+ * @throws {Error} - Jika format waktu tidak valid atau tidak dikenali.
+ */
+function timeFormat({ data = [], column, old_format, new_format }) {
+	try {
+		timeHandler.isSupportedFormat(old_format);
+		timeHandler.isSupportedFormat(new_format);
+
+		let transformValue;
+
+		const old_type = old_format.startsWith("epoch") ? "epoch" : "sting";
+		const new_type = new_format.startsWith("epoch") ? "epoch" : "sting";
+
+		if (old_type === "string" && new_type === "string") {
+			transformValue = (val) =>
+				timeHandler.stringToString(val, old_format, new_format);
+		} else if (old_type === "string" && new_type === "epoch") {
+			transformValue = (val) =>
+				timeHandler.stringToEpoch(val, old_format, new_format);
+		} else if (old_type === "epoch" && new_type === "epoch") {
+			transformValue = (val) =>
+				timeHandler.epochToString(val, new_format, old_format);
+		} else if (old_type === "epoch" && new_type === "string") {
+			transformValue = (val) =>
+				timeHandler.epochToEpoch(val, old_format, new_format);
+		}
+
+		const result = data.map((row) => {
+			const value = row[column];
+			if (value === null || value === undefined) return row;
+
+			return { ...row, [column]: transformValue(value) };
+		});
+
+		return result;
+	} catch (error) {
+		throw new Error(`ERROR TIME-FORMAT: ${error.message}`);
 	}
 }
 

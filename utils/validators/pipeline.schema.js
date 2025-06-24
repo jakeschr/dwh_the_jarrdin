@@ -90,12 +90,20 @@ const filterObj = {
 
 const transformObj = {
 	type: Joi.string()
-		.valid("join", "rename", "formula", "map", "filter", "aggregate")
+		.valid(
+			"join",
+			"rename",
+			"formula",
+			"map",
+			"filter",
+			"aggregate",
+			"time-format"
+		)
 		.required()
 		.messages({
 			"string.base": `'type' must be a text.`,
 			"any.required": `'type' is required.`,
-			"any.only": `'type' must be one of 'join', 'rename', 'formula', 'map', 'filter', or 'aggregate'.`,
+			"any.only": `'type' must be one of 'join', 'rename', 'formula', 'map', 'filter', 'aggregate', 'time-format'.`,
 		}),
 	order: Joi.number().integer().min(1).required().messages({
 		"number.base": `'order' in transforms item must be a number.`,

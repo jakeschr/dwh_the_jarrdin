@@ -10,7 +10,7 @@
 				"columns": ["apartment_id", "tower", "floor", "unit", "area"],
 				"filters": [
 					{
-						"fields": ["timestamp"],
+						"columns": ["timestamp"],
 						"operator": "gte",
 						"value": {
 							"source": "time_threshold",
@@ -24,7 +24,7 @@
 				"columns": ["occupant_id", "name", "email", "phone", "address"],
 				"filters": [
 					{
-						"fields": ["timestamp"],
+						"columns": ["timestamp"],
 						"operator": "gte",
 						"value": {
 							"source": "time_threshold",
@@ -47,7 +47,7 @@
 				],
 				"filters": [
 					{
-						"fields": ["timestamp"],
+						"columns": ["timestamp"],
 						"operator": "gte",
 						"value": {
 							"source": "time_threshold",
@@ -68,7 +68,7 @@
 				],
 				"filters": [
 					{
-						"fields": ["timestamp"],
+						"columns": ["timestamp"],
 						"operator": "gte",
 						"value": {
 							"source": "time_threshold",
@@ -88,7 +88,7 @@
 				],
 				"filters": [
 					{
-						"fields": ["timestamp"],
+						"columns": ["timestamp"],
 						"operator": "gte",
 						"value": {
 							"source": "time_threshold",
@@ -130,7 +130,22 @@
 				],
 				"init_value": "src.contract",
 				"order": 3,
-				"transforms": null
+				"transforms": [
+					{
+						"type": "time-format",
+						"column": "start_date",
+						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
+						"new_format": "YYYY-MM-DD",
+						"order": 1
+					},
+					{
+						"type": "time-format",
+						"column": "end_date",
+						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
+						"new_format": "YYYY-MM-DD",
+						"order": 2
+					}
+				]
 			},
 			{
 				"table": "invoice",
@@ -144,7 +159,15 @@
 				],
 				"init_value": "src.invoice",
 				"order": 4,
-				"transforms": null
+				"transforms": [
+					{
+						"type": "time-format",
+						"column": "due_date",
+						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
+						"new_format": "YYYY-MM-DD",
+						"order": 1
+					}
+				]
 			},
 			{
 				"table": "payment",
@@ -157,7 +180,15 @@
 				],
 				"init_value": "src.payment",
 				"order": 5,
-				"transforms": null
+				"transforms": [
+					{
+						"type": "time-format",
+						"column": "payment_date",
+						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
+						"new_format": "YYYY-MM-DD",
+						"order": 1
+					}
+				]
 			}
 		]
 	}
