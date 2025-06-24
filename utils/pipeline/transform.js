@@ -522,8 +522,6 @@ function aggregate({
  * Format asal dan tujuan dapat berupa format string (misal: "DD/MM/YYYY", "YYYY-MM-DD"),
  * atau format waktu numerik seperti epoch dalam milidetik (`epoch_ms`) dan detik (`epoch_s`).
  *
- * Jika `old_format` tidak diberikan, maka sistem akan otomatis mendeteksi format asal dari nilai waktu.
- *
  * Contoh penggunaan:
  *  timeFormat({
  *    data: [...],
@@ -541,21 +539,21 @@ function aggregate({
  *
  * @param {Object} param0 - Parameter konfigurasi transformasi.
  * @param {Array<Object>} param0.data - Array objek data yang akan diproses.
- * @param {string} param0.column - Nama kolom yang akan diubah format waktunya.
- * @param {string} [param0.old_format] - Format waktu asal (jika tidak diberikan, akan dideteksi otomatis).
+ * @param {Array<string>} param0.columns - Daftar kolom yang akan diubah format waktunya.
+ * @param {string} [param0.old_format] - Format waktu asal. Jika tidak disediakan, akan dideteksi otomatis per nilai.
  * @param {string} param0.new_format - Format waktu tujuan (string format atau "epoch_ms"/"epoch_s").
- * @returns {Array<Object>} - Data yang telah diubah format waktu pada kolom tertentu.
+ * @returns {Array<Object>} - Data yang telah diubah format waktu pada kolom-kolom tertentu.
  * @throws {Error} - Jika format waktu tidak valid atau tidak dikenali.
  */
-function timeFormat({ data = [], column, old_format, new_format }) {
+function timeFormat({ data = [], columns, old_format, new_format }) {
 	try {
 		timeHandler.isSupportedFormat(old_format);
 		timeHandler.isSupportedFormat(new_format);
 
 		let transformValue;
 
-		const old_type = old_format.startsWith("epoch") ? "epoch" : "sting";
-		const new_type = new_format.startsWith("epoch") ? "epoch" : "sting";
+		const old_type = old_format.startsWith("epoch") ? "epoch" : "string";
+		const new_type = new_format.startsWith("epoch") ? "epoch" : "string";
 
 		if (old_type === "string" && new_type === "string") {
 			transformValue = (val) =>
@@ -571,11 +569,19 @@ function timeFormat({ data = [], column, old_format, new_format }) {
 				timeHandler.epochToEpoch(val, old_format, new_format);
 		}
 
+		// Transformasi per baris dan kolom
 		const result = data.map((row) => {
-			const value = row[column];
-			if (value === null || value === undefined) return row;
+			const updatedRow = { ...row };
 
-			return { ...row, [column]: transformValue(value) };
+			for (const col of columns) {
+				const value = row[col];
+				if (value === null || value === undefined) continue;
+
+				const detectedFormat = old_format || timeHandler.getFormat(value);
+				updatedRow[col] = transformValue(value, detectedFormat);
+			}
+
+			return updatedRow;
 		});
 
 		return result;

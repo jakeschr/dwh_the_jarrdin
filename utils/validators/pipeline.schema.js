@@ -200,12 +200,25 @@ const transformObj = {
 		otherwise: Joi.forbidden(),
 	}),
 
-	// CASE: filter
+	// CASE: filter or time-format
 	columns: Joi.when("type", {
-		is: "filter",
-		then: Joi.string().required().messages({
-			"any.required": `'columns' is required when type is 'filter'.`,
-		}),
+		is: ["filter", "time-format"],
+		then: Joi.array()
+			.items(
+				Joi.string().min(3).max(100).required().messages({
+					"string.base": `columns items must be a string.`,
+					"string.min": `columns items min characters is 3.`,
+					"string.max": `columns items max characters is 100.`,
+					"any.required": `columns items is required.`,
+				})
+			)
+			.min(1)
+			.required()
+			.messages({
+				"array.base": `'columns' must be an array.`,
+				"array.min": `'columns' must contain at least one item.`,
+				"any.required": `'columns' is required when type is 'filter' or 'time-format'.`,
+			}),
 		otherwise: Joi.forbidden(),
 	}),
 	operator: Joi.when("type", {
@@ -241,6 +254,44 @@ const transformObj = {
 			.required()
 			.messages({
 				"any.required": `'value' is required when type is 'filter'.`,
+			}),
+		otherwise: Joi.forbidden(),
+	}),
+	old_format: Joi.when("type", {
+		is: "time-format",
+		then: Joi.string()
+			.valid(
+				"YYYY-MM-DDTHH:mm:ssZ",
+				"YYYY-MM-DD HH:mm:ss",
+				"DD/MM/YYYY HH:mm:ss",
+				"YYYY-MM-DD",
+				"DD/MM/YYYY",
+				"epoch_ms",
+				"epoch_s"
+			)
+			.required()
+			.messages({
+				"any.only": `'old_format' must be a valid.`,
+				"any.required": `'old_format' is required when type is 'time-format'.`,
+			}),
+		otherwise: Joi.forbidden(),
+	}),
+	new_format: Joi.when("type", {
+		is: "time-format",
+		then: Joi.string()
+			.valid(
+				"YYYY-MM-DDTHH:mm:ssZ",
+				"YYYY-MM-DD HH:mm:ss",
+				"DD/MM/YYYY HH:mm:ss",
+				"YYYY-MM-DD",
+				"DD/MM/YYYY",
+				"epoch_ms",
+				"epoch_s"
+			)
+			.required()
+			.messages({
+				"any.only": `'new_format' must be a valid.`,
+				"any.required": `'new_format' is required when type is 'time-format'.`,
 			}),
 		otherwise: Joi.forbidden(),
 	}),

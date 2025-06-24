@@ -133,17 +133,10 @@
 				"transforms": [
 					{
 						"type": "time-format",
-						"column": "start_date",
+						"columns": ["start_date", "end_date"],
 						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
 						"new_format": "YYYY-MM-DD",
 						"order": 1
-					},
-					{
-						"type": "time-format",
-						"column": "end_date",
-						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
-						"new_format": "YYYY-MM-DD",
-						"order": 2
 					}
 				]
 			},
@@ -162,7 +155,7 @@
 				"transforms": [
 					{
 						"type": "time-format",
-						"column": "due_date",
+						"columns": ["due_date"],
 						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
 						"new_format": "YYYY-MM-DD",
 						"order": 1
@@ -183,7 +176,7 @@
 				"transforms": [
 					{
 						"type": "time-format",
-						"column": "payment_date",
+						"columns": ["payment_date"],
 						"old_format": "YYYY-MM-DDTHH:mm:ssZ",
 						"new_format": "YYYY-MM-DD",
 						"order": 1

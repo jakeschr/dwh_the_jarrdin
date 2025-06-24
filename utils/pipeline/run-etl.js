@@ -107,9 +107,12 @@ const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 
 function buildLog(name, status, result, type) {
 	if (type === "load") {
-		if (result.data.length > 0 && result.error.length > 0) {
+		const dataLength = result.data.length;
+		const errorLength = result.error.length;
+
+		if (dataLength > 0 && errorLength > 0) {
 			status = "partial";
-		} else if (result.data.length > 0 && result.error.length === 0) {
+		} else if (dataLength > 0 && errorLength === 0) {
 			status = "success";
 		} else {
 			status = "error";
@@ -118,11 +121,8 @@ function buildLog(name, status, result, type) {
 		return {
 			status: status,
 			name: name,
-			count: result.data.length,
-			message:
-				status === "error"
-					? `Error extract data from ${name}`
-					: `${result.data.length} records ${type}ed.`,
+			count: dataLength,
+			message: `${dataLength} records ${type}ed.`,
 			error: result.error,
 		};
 	} else {
