@@ -210,6 +210,7 @@ class DatabaseService {
 	}
 
 	async createTable(data) {
+		let connection;
 		try {
 			const config = await DatabaseRepository.findForConnection(
 				data.database_id
@@ -228,7 +229,7 @@ class DatabaseService {
 				config.password = passwordHandler.decryptSymmetric(config.password);
 			}
 
-			const connection = await connectionHandler.open(config);
+			connection = await connectionHandler.open(config);
 
 			// Gabungkan semua query tabel
 			const tableQueries = data.tables.map((table) =>
@@ -239,13 +240,7 @@ class DatabaseService {
 				"\n\n"
 			);
 
-			// return fullQuery;
-
-			try {
-				await connection.query(fullQuery);
-			} catch (error) {
-				throw error;
-			}
+			await connection.query(fullQuery);
 
 			await connectionHandler.close(connection, config.dialect);
 
@@ -255,6 +250,9 @@ class DatabaseService {
 				query: fullQuery,
 			};
 		} catch (error) {
+			if (connection) {
+				await connection.query("ROLLBACK");
+			}
 			throw error;
 		}
 	}

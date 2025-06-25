@@ -15,6 +15,7 @@ const connectionHandler = {
 				// --- MySQL ---
 				case "mysql-native":
 					return await mysql.createConnection({
+						multipleStatements: true,
 						host: config.host,
 						port: config.port,
 						user: config.username,
@@ -154,7 +155,5 @@ function buildCreateTableQuery(table) {
 		",\n"
 	)}\n);`;
 }
-
-
 
 module.exports = { connectionHandler, buildCreateTableQuery };
