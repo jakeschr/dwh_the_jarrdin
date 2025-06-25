@@ -140,7 +140,6 @@ class PipelineService {
 
 			const pipeline = await PipelineRepository.findForETL(pipeline_id);
 
-
 			// return pipeline
 
 			const result = await runETL({
@@ -162,7 +161,7 @@ class PipelineService {
 
 			await dbTrx.commit();
 
-			return result;
+			return result.log;
 		} catch (error) {
 			if (dbTrx) await dbTrx.rollback();
 			throw error;

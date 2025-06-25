@@ -3,14 +3,18 @@
 	"name": "OPT (sybase) to LAKE (mysql)",
 	"description": null,
 	"source": {
-		"database": {
-			"database_id": "dtb-mc3dxk88-f528a9",
-			"label": "Sybase The Jarrdin Opt"
-		},
+		"database_id": "dtb-mc3dxk88-f528a9",
 		"configs": [
 			{
 				"table": "apartment",
-				"columns": ["apartment_id", "tower", "floor", "unit", "area"],
+				"columns": [
+					"apartment_id",
+					"tower",
+					"floor",
+					"unit",
+					"area",
+					"timestamp"
+				],
 				"filters": [
 					{
 						"columns": ["timestamp"],
@@ -24,7 +28,14 @@
 			},
 			{
 				"table": "occupant",
-				"columns": ["occupant_id", "name", "email", "phone", "address"],
+				"columns": [
+					"occupant_id",
+					"name",
+					"email",
+					"phone",
+					"address",
+					"timestamp"
+				],
 				"filters": [
 					{
 						"columns": ["timestamp"],
@@ -46,7 +57,8 @@
 					"end_date",
 					"amount",
 					"type",
-					"status"
+					"status",
+					"timestamp"
 				],
 				"filters": [
 					{
@@ -67,7 +79,8 @@
 					"due_date",
 					"amount",
 					"type",
-					"status"
+					"status",
+					"timestamp"
 				],
 				"filters": [
 					{
@@ -87,7 +100,8 @@
 					"invoice_id",
 					"payment_date",
 					"payment_amount",
-					"payment_method"
+					"payment_method",
+					"timestamp"
 				],
 				"filters": [
 					{
@@ -103,21 +117,18 @@
 		]
 	},
 	"destination": {
-		"database": {
-			"database_id": "dtb-mc7poch1-ae4ba3",
-			"label": "LAKE"
-		},
+		"database_id": "dtb-mc7poch1-ae4ba3",
 		"configs": [
 			{
 				"table": "apartment",
-				"columns": ["apartment_id", "tower", "floor", "unit", "area"],
+				"columns": ["apartment_id", "tower", "floor", "unit", "area", "timestamp"],
 				"init_value": "src.apartment",
 				"order": 1,
 				"transforms": null
 			},
 			{
 				"table": "occupant",
-				"columns": ["occupant_id", "name", "email", "phone", "address"],
+				"columns": ["occupant_id", "name", "email", "phone", "address", "timestamp"],
 				"init_value": "src.occupant",
 				"order": 2,
 				"transforms": null
@@ -132,7 +143,8 @@
 					"end_date",
 					"amount",
 					"type",
-					"status"
+					"status",
+					"timestamp"
 				],
 				"init_value": "src.contract",
 				"order": 3,
@@ -154,7 +166,8 @@
 					"due_date",
 					"amount",
 					"type",
-					"status"
+					"status",
+					"timestamp"
 				],
 				"init_value": "src.invoice",
 				"order": 4,
@@ -175,7 +188,8 @@
 					"invoice_id",
 					"payment_date",
 					"payment_amount",
-					"payment_method"
+					"payment_method",
+					"timestamp"
 				],
 				"init_value": "src.payment",
 				"order": 5,
