@@ -12,8 +12,7 @@
 				{ "name": "type", "type": "VARCHAR(20)", "null": false },
 				{ "name": "area", "type": "INT(11)", "null": false },
 				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
-			],
-			"order": 1
+			]
 		},
 		{
 			"name": "occupant",
@@ -25,21 +24,47 @@
 				{ "name": "phone", "type": "VARCHAR(20)", "null": false },
 				{ "name": "address", "type": "TEXT", "null": false },
 				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
-			],
-			"order": 2
+			]
 		},
 		{
 			"name": "contract",
 			"pk": ["contract_id", "timestamp"],
 			"columns": [
 				{ "name": "contract_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "name", "type": "VARCHAR(200)", "null": false },
-				{ "name": "email", "type": "VARCHAR(200)", "null": false },
-				{ "name": "phone", "type": "VARCHAR(20)", "null": false },
-				{ "name": "address", "type": "TEXT", "null": false },
+				{ "name": "apartment_id", "type": "VARCHAR(50)", "null": false },
+				{ "name": "occupant_id", "type": "VARCHAR(50)", "null": false },
+				{ "name": "start_date", "type": "DATE", "null": false },
+				{ "name": "end_date", "type": "DATE", "null": false },
+				{ "name": "amount", "type": "DOUBLE", "null": false },
+				{ "name": "type", "type": "VARCHAR(50)", "null": false },
+				{ "name": "status", "type": "VARCHAR(50)", "null": false },
 				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
-			],
-			"order": 1
+			]
+		},
+		{
+			"name": "invoice",
+			"pk": ["invoice_id", "timestamp"],
+			"columns": [
+				{ "name": "invoice_id", "type": "VARCHAR(50)", "null": false },
+				{ "name": "contract_id", "type": "VARCHAR(50)", "null": false },
+				{ "name": "due_date", "type": "DATE", "null": false },
+				{ "name": "amount", "type": "DOUBLE", "null": false },
+				{ "name": "type", "type": "VARCHAR(50)", "null": false },
+				{ "name": "status", "type": "VARCHAR(50)", "null": false },
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+			]
+		},
+		{
+			"name": "payment",
+			"pk": ["payment_id", "timestamp"],
+			"columns": [
+				{ "name": "payment_id", "type": "VARCHAR(50)", "null": false },
+				{ "name": "invoice_id", "type": "VARCHAR(50)", "null": false },
+				{ "name": "payment_date", "type": "DATE", "null": false },
+				{ "name": "payment_amount", "type": "DOUBLE", "null": false },
+				{ "name": "peyment_method", "type": "VARCHAR(50)", "null": false },
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+			]
 		}
 	]
 }
