@@ -1,14 +1,22 @@
+const { timeHandler } = require("../time-handler.util");
+
 async function load({ database, configs, data }) {
 	const results = {};
 	const { connection, type } = database;
 
 	for (const config of configs.sort((a, b) => a.order - b.order)) {
-		const { table, columns, unique } = config;
-		const rows = data[table];
+		let { table, columns, unique } = config;
+		let rows = data[table];
 
 		results[table] = { data: [], error: [] };
 
 		if (!Array.isArray(rows) || rows.length === 0) continue;
+
+		if (type === "lake") {
+			const preparedData = prepareLakeData(columns, rows);
+			columns = preparedData.columns;
+			rows = preparedData.rows;
+		}
 
 		const batches = splitIntoChunks(rows);
 
@@ -73,6 +81,23 @@ function splitIntoChunks(data) {
 		chunks.push(data.slice(i, i + 500));
 	}
 	return chunks;
+}
+
+function prepareLakeData(columns, rows) {
+	const timestamp = timeHandler.nowEpoch();
+
+	// Tambahkan kolom jika belum ada
+	if (!columns.includes("load_timestamp")) {
+		columns.push("load_timestamp");
+	}
+
+	// Tambahkan/ganti nilai load_timestamp pada setiap baris
+	const updatedRows = rows.map((row) => ({
+		...row,
+		load_timestamp: timestamp,
+	}));
+
+	return { columns, rows: updatedRows };
 }
 
 module.exports = { load };

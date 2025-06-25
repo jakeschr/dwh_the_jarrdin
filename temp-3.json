@@ -3,7 +3,7 @@
 	"tables": [
 		{
 			"name": "apartment",
-			"pk": ["apartment_id", "timestamp"],
+			"pk": ["apartment_id", "load_timestamp"],
 			"columns": [
 				{ "name": "apartment_id", "type": "VARCHAR(50)", "null": false },
 				{ "name": "tower", "type": "VARCHAR(20)", "null": false },
@@ -11,24 +11,26 @@
 				{ "name": "unit", "type": "VARCHAR(20)", "null": false },
 				{ "name": "type", "type": "VARCHAR(20)", "null": false },
 				{ "name": "area", "type": "INT(11)", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
+				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
 			]
 		},
 		{
 			"name": "occupant",
-			"pk": ["occupant_id", "timestamp"],
+			"pk": ["occupant_id", "load_timestamp"],
 			"columns": [
 				{ "name": "occupant_id", "type": "VARCHAR(50)", "null": false },
 				{ "name": "name", "type": "VARCHAR(200)", "null": false },
 				{ "name": "email", "type": "VARCHAR(200)", "null": false },
 				{ "name": "phone", "type": "VARCHAR(20)", "null": false },
 				{ "name": "address", "type": "TEXT", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
+				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
 			]
 		},
 		{
 			"name": "contract",
-			"pk": ["contract_id", "timestamp"],
+			"pk": ["contract_id", "load_timestamp"],
 			"columns": [
 				{ "name": "contract_id", "type": "VARCHAR(50)", "null": false },
 				{ "name": "apartment_id", "type": "VARCHAR(50)", "null": false },
@@ -38,12 +40,13 @@
 				{ "name": "amount", "type": "DOUBLE", "null": false },
 				{ "name": "type", "type": "VARCHAR(50)", "null": false },
 				{ "name": "status", "type": "VARCHAR(50)", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
+				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
 			]
 		},
 		{
 			"name": "invoice",
-			"pk": ["invoice_id", "timestamp"],
+			"pk": ["invoice_id", "load_timestamp"],
 			"columns": [
 				{ "name": "invoice_id", "type": "VARCHAR(50)", "null": false },
 				{ "name": "contract_id", "type": "VARCHAR(50)", "null": false },
@@ -51,19 +54,21 @@
 				{ "name": "amount", "type": "DOUBLE", "null": false },
 				{ "name": "type", "type": "VARCHAR(50)", "null": false },
 				{ "name": "status", "type": "VARCHAR(50)", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
+				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
 			]
 		},
 		{
 			"name": "payment",
-			"pk": ["payment_id", "timestamp"],
+			"pk": ["payment_id", "load_timestamp"],
 			"columns": [
 				{ "name": "payment_id", "type": "VARCHAR(50)", "null": false },
 				{ "name": "invoice_id", "type": "VARCHAR(50)", "null": false },
 				{ "name": "payment_date", "type": "DATE", "null": false },
 				{ "name": "payment_amount", "type": "DOUBLE", "null": false },
-				{ "name": "peyment_method", "type": "VARCHAR(50)", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false }
+				{ "name": "payment_method", "type": "VARCHAR(50)", "null": false },
+				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
+				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
 			]
 		}
 	]

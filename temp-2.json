@@ -3,7 +3,10 @@
 	"name": "OPT (sybase) to LAKE (mysql)",
 	"description": null,
 	"source": {
-		"database_id": "dtb-mc3dxk88-f528a9",
+		"database": {
+			"database_id": "dtb-mc3dxk88-f528a9",
+			"label": "Sybase The Jarrdin Opt"
+		},
 		"configs": [
 			{
 				"table": "apartment",
@@ -100,7 +103,10 @@
 		]
 	},
 	"destination": {
-		"database_id": "dtb-mc7poch1-ae4ba3",
+		"database": {
+			"database_id": "dtb-mc7poch1-ae4ba3",
+			"label": "LAKE"
+		},
 		"configs": [
 			{
 				"table": "apartment",
