@@ -219,6 +219,65 @@ const databaseSchema = {
 
 		return schema.validate(data, { abortEarly: false });
 	},
+
+	createTable(data) {
+		const schema = Joi.object({
+			database_id: Joi.string().required().messages({
+				"string.base": `'database_id' must be a string.`,
+				"any.required": `'database_id' is required.`,
+			}),
+			tables: Joi.array()
+				.items(
+					Joi.object({
+						name: Joi.string().max(100).required().messages({
+							"string.base": `'name' of table must be a string.`,
+							"string.max": `'name' must not exceed 100 characters.`,
+							"any.required": `'name' is required.`,
+						}),
+						pk: Joi.array().items(Joi.string()).min(2).required().messages({
+							"array.base": `'pk' must be an array of strings.`,
+							"array.min": `'pk' must contain at least 2 items (including timestamp).`,
+							"any.required": `'pk' is required.`,
+						}),
+						columns: Joi.array()
+							.items(
+								Joi.object({
+									name: Joi.string().max(100).required().messages({
+										"string.base": `'column.name' must be a string.`,
+										"string.max": `'column.name' must not exceed 100 characters.`,
+										"any.required": `'column.name' is required.`,
+									}),
+									type: Joi.string().max(100).required().messages({
+										"string.base": `'column.type' must be a string.`,
+										"string.max": `'column.type' must not exceed 100 characters.`,
+										"any.required": `'column.type' is required.`,
+									}),
+									null: Joi.boolean().required().messages({
+										"boolean.base": `'column.null' must be a boolean.`,
+										"any.required": `'column.null' is required.`,
+									}),
+								})
+							)
+							.min(2)
+							.required()
+							.messages({
+								"array.base": `'columns' must be an array.`,
+								"array.min": `'columns' must contain at least 2 item.`,
+								"any.required": `'columns' is required.`,
+							}),
+					})
+				)
+				.min(1)
+				.required()
+				.messages({
+					"array.base": `'tables' must be an array.`,
+					"array.min": `'tables' must contain at least 1 table.`,
+					"any.required": `'tables' is required.`,
+				}),
+		});
+
+		return schema.validate(data, { abortEarly: false });
+	},
 };
 
 module.exports = { databaseSchema };

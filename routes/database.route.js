@@ -10,7 +10,7 @@ router.get(
 	DatabaseController.connectionTest
 );
 
-router.get(
+router.post(
 	"/:version/database/create-table",
 	authorization, //
 	DatabaseController.createTable

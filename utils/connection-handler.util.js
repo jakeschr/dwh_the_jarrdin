@@ -123,66 +123,39 @@ async function connectODBC(config) {
 	return await odbc.connect(connStr);
 }
 
-function buildCreateTableQuery(data) {
-	try {
-		const { table, columns, pk = [], unique = [], fk = [] } = data;
+function buildCreateTableQuery(table) {
+	const { name, columns, pk } = table;
 
-		if (!table || !Array.isArray(columns) || columns.length === 0) {
-			throw new Error("Nama tabel dan daftar kolom wajib disediakan.");
-		}
-
-		const columnDefs = columns.map((col) => {
-			let colDef = `\`${col.name}\` ${col.type}`;
-			colDef += col.null === false ? " NOT NULL" : " NULL";
-
-			if (col.auto_increment) {
-				colDef += " AUTO_INCREMENT";
-			}
-
-			if (col.default !== undefined && col.default !== null) {
-				if (
-					typeof col.default === "string" &&
-					!/^CURRENT_TIMESTAMP$/i.test(col.default)
-				) {
-					colDef += ` DEFAULT '${col.default.replace(/'/g, "''")}'`;
-				} else {
-					colDef += ` DEFAULT ${col.default}`;
-				}
-			}
-
-			return colDef;
-		});
-
-		// Primary key
-		if (pk.length > 0) {
-			columnDefs.push(`PRIMARY KEY (${pk.map((c) => `\`${c}\``).join(", ")})`);
-		}
-
-		// Unique constraints
-		for (const u of unique) {
-			const uCols = Array.isArray(u) ? u : [u];
-			columnDefs.push(`UNIQUE (${uCols.map((c) => `\`${c}\``).join(", ")})`);
-		}
-
-		// Foreign keys
-		for (const fkDef of fk) {
-			if (!fkDef.column || !fkDef.references) continue;
-
-			let fkLine = `FOREIGN KEY (\`${fkDef.column}\`) REFERENCES ${fkDef.references}`;
-			if (fkDef.on_delete) fkLine += ` ON DELETE ${fkDef.on_delete}`;
-			if (fkDef.on_update) fkLine += ` ON UPDATE ${fkDef.on_update}`;
-			columnDefs.push(fkLine);
-		}
-
-		const query = `CREATE TABLE \`${table}\` (\n  ${columnDefs.join(
-			",\n  "
-		)}\n);`;
-
-		
-		return query;
-	} catch (error) {
-		throw error;
+	if (!name || !Array.isArray(columns) || columns.length === 0) {
+		throw new Error("Tabel harus memiliki nama dan kolom.");
 	}
+
+	if (!Array.isArray(pk) || pk.length < 2) {
+		throw new Error(
+			`Tabel '${name}' harus memiliki setidaknya dua kolom primary key (termasuk timestamp).`
+		);
+	}
+
+	const colDefs = columns.map((col) => {
+		if (!col.name || !col.type) {
+			throw new Error(
+				`Kolom pada tabel '${name}' harus memiliki 'name' dan 'type'.`
+			);
+		}
+		const nullable = col.null === false ? "NOT NULL" : "NULL";
+		return `\`${col.name}\` ${col.type} ${nullable}`;
+	});
+
+	const primaryKey = `PRIMARY KEY (${pk
+		.map((col) => `\`${col}\``)
+		.join(", ")})`;
+
+	return `CREATE TABLE IF NOT EXISTS \`${name}\` (\n  ${[
+		...colDefs,
+		primaryKey,
+	].join(",\n  ")}\n);`;
 }
+
+
 
 module.exports = { connectionHandler, buildCreateTableQuery };
