@@ -406,6 +406,20 @@ const dstObj = {
 						"array.min": `'columns' must contain at least one item.`,
 						"any.required": `'columns' is a required in destination item.`,
 					}),
+				unique: Joi.array()
+					.items(
+						Joi.string().max(50).messages({
+							"string.base": `'unique' must contain strings.`,
+							"string.max": `Each item in 'unique' must not exceed 50 characters.`,
+						})
+					)
+					.min(1)
+					.optional()
+					.messages({
+						"array.base": `'unique' must be an array.`,
+						"array.min": `'unique' must contain at least one item.`,
+						"any.required": `'unique' is a required in destination item.`,
+					}),
 				init_value: Joi.string()
 					.pattern(/^[a-z]+\.[a-z_]+$/)
 					.required()
