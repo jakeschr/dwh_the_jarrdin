@@ -126,34 +126,33 @@ async function connectODBC(config) {
 function buildCreateTableQuery(table) {
 	const { name, columns, pk } = table;
 
-	if (!name || !Array.isArray(columns) || columns.length === 0) {
-		throw new Error("Tabel harus memiliki nama dan kolom.");
+	if (!name || typeof name !== "string") {
+		throw new Error("Tabel harus memiliki nama yang valid.");
 	}
-
+	if (!Array.isArray(columns) || columns.length === 0) {
+		throw new Error(`Tabel '${name}' harus memiliki setidaknya satu kolom.`);
+	}
 	if (!Array.isArray(pk) || pk.length < 2) {
 		throw new Error(
-			`Tabel '${name}' harus memiliki setidaknya dua kolom primary key (termasuk timestamp).`
+			`Tabel '${name}' harus memiliki minimal dua kolom primary key.`
 		);
 	}
 
 	const colDefs = columns.map((col) => {
 		if (!col.name || !col.type) {
 			throw new Error(
-				`Kolom pada tabel '${name}' harus memiliki 'name' dan 'type'.`
+				`Kolom di tabel '${name}' harus memiliki 'name' dan 'type'.`
 			);
 		}
 		const nullable = col.null === false ? "NOT NULL" : "NULL";
-		return `\`${col.name}\` ${col.type} ${nullable}`;
+		return `  \`${col.name}\` ${col.type} ${nullable}`;
 	});
 
-	const primaryKey = `PRIMARY KEY (${pk
-		.map((col) => `\`${col}\``)
-		.join(", ")})`;
+	const pkDef = `  PRIMARY KEY (${pk.map((k) => `\`${k}\``).join(", ")})`;
 
-	return `CREATE TABLE IF NOT EXISTS \`${name}\` (\n  ${[
-		...colDefs,
-		primaryKey,
-	].join(",\n  ")}\n);`;
+	return `CREATE TABLE IF NOT EXISTS \`${name}\` (\n${[...colDefs, pkDef].join(
+		",\n"
+	)}\n);`;
 }
 
 

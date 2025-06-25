@@ -211,39 +211,53 @@ class DatabaseService {
 
 	async createTable(data) {
 		try {
-			const config = await DatabaseRepository.findForConnection(data.database_id);
-	
+			const config = await DatabaseRepository.findForConnection(
+				data.database_id
+			);
+
 			if (config.type !== "lake") {
 				throw Object.assign(
-					new Error("Hanya database dengan tipe 'lake' yang diperbolehkan membuat tabel."),
+					new Error(
+						"Hanya database dengan tipe 'lake' yang diperbolehkan membuat tabel."
+					),
 					{ code: 400 }
 				);
 			}
-	
+
 			if (config.password) {
 				config.password = passwordHandler.decryptSymmetric(config.password);
 			}
-	
+
 			const connection = await connectionHandler.open(config);
-	
-			// Gabungkan semua query create table
-			const allQueries = data.tables
-				.map((table) => buildCreateTableQuery(table))
-				.join("\n");
-	
-			await connection.query(allQueries);
-	
+
+			// Gabungkan semua query tabel
+			const tableQueries = data.tables.map((table) =>
+				buildCreateTableQuery(table)
+			);
+
+			const fullQuery = ["START TRANSACTION;", ...tableQueries, "COMMIT;"].join(
+				"\n\n"
+			);
+
+			// return fullQuery;
+
+			try {
+				await connection.query(fullQuery);
+			} catch (error) {
+				throw error;
+			}
+
 			await connectionHandler.close(connection, config.dialect);
-	
+
 			return {
 				status: "success",
 				message: `Berhasil membuat ${data.tables.length} tabel di database lake.`,
+				query: fullQuery,
 			};
 		} catch (error) {
-			throw new Error(`Gagal membuat tabel: ${error.message}`);
+			throw error;
 		}
 	}
-	
 }
 
 module.exports = { DatabaseService: new DatabaseService() };
