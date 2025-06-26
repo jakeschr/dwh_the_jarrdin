@@ -157,7 +157,7 @@ class DatabaseService {
 			}
 
 			// Lakukan koneksi
-			connection = await queryHandler.open(config);
+			connection = await queryHandler.openConnection(config);
 
 			let tableList;
 
@@ -217,7 +217,7 @@ class DatabaseService {
 					throw new Error("Unsupported database type");
 			}
 
-			await queryHandler.close(connection, config.dialect);
+			await queryHandler.closeConnection(connection, config.dialect);
 
 			return {
 				status: "success",
