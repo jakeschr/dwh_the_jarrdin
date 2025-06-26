@@ -104,9 +104,9 @@ const queryHandler = {
 					);
 			}
 		} catch (err) {
-			throw new Error(
-				`Failed to connect to ${dialect} (${driver}): ${err.message}`
-			);
+			console.error(err);
+
+			throw new Error(`Failed to connect to ${dialect} (${driver}):`, err);
 		}
 	},
 
