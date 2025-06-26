@@ -310,30 +310,26 @@ const queryHandler = {
 							null: col.nulls === "Y",
 						}));
 
-						// Primary key
-						// Primary key
-						let resPK = [];
+						// Ambil semua kolom yang termasuk dalam indeks, bukan hanya PK
+						let resIndexedCols = [];
 						try {
-							resPK = await connection.query(
+							resIndexedCols = await connection.query(
 								`
-								SELECT c.column_name
-								FROM sysindex i
-								INNER JOIN sysindexkey ik ON i.table_id = ik.table_id AND i.index_id = ik.index_id
-								INNER JOIN syscolumn c ON c.table_id = ik.table_id AND c.column_id = ik.column_id
-								WHERE i.table_id = ? AND BITAND(i.status, 2048) = 2048
+								SELECT DISTINCT c.column_name
+								FROM sysidxcol ic
+								JOIN syscolumn c ON ic.table_id = c.table_id AND ic.column_id = c.column_id
+								WHERE ic.table_id = ?
+								ORDER BY c.column_name
 								`,
 								[tableId]
-							);							
-						} catch (err) {
-							console.warn(
-								`Gagal ambil PK untuk tabel ${tableName}:`,
-								err.message
 							);
+						} catch (err) {
+							console.warn(`Gagal ambil indeks untuk tabel ${tableName}:`, err);
 						}
 
-						const pk = resPK.map((col) => col.column_name);
+						const index = resIndexedCols.map((col) => col.column_name);
 
-						result.tables.push({ name: tableName, pk, columns });
+						result.tables.push({ name: tableName, index, columns });
 					}
 					break;
 				}
