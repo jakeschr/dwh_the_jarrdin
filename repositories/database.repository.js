@@ -79,7 +79,7 @@ class DatabaseRepository {
 					host: row.host,
 					port: row.port,
 					username: row.username,
-					password_saved: row.password ? true : false,
+					password: row.password,
 					driver: row.driver,
 					dsn: row.dsn,
 					schema: row.schema,

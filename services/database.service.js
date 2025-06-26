@@ -3,10 +3,7 @@ const {
 } = require("../repositories/database.repository.js");
 const { LogRepository } = require("../repositories/log.repository.js");
 
-const {
-	connectionHandler,
-	buildCreateTableQuery,
-} = require("../utils/connection-handler.util");
+const { queryHandler } = require("../utils/query-handler.util");
 const { passwordHandler } = require("../utils/password-handler.util");
 const { filterHandler } = require("../utils/filter-handler.util.js");
 const { Connection } = require("../models/index.js");
@@ -25,6 +22,27 @@ class DatabaseService {
 					break;
 				case "detail":
 					result = await DatabaseRepository.findOne(data.id);
+
+					try {
+						if (result.password) {
+							result.password = passwordHandler.decryptSymmetric(
+								result.password
+							);
+						}
+
+						const connection = await queryHandler.openConnection(config);
+
+						result.info = await queryHandler.databaseInfo(
+							connection,
+							result.dialect,
+							result.database
+						);
+
+						await queryHandler.closeConnection(connection, config.dialect);
+					} catch (error) {
+						result.info = null;
+					}
+
 					break;
 				default:
 					throw new Error(`Unsupported response type: ${response_type}`);
@@ -137,7 +155,7 @@ class DatabaseService {
 			}
 
 			// Lakukan koneksi
-			connection = await connectionHandler.open(config);
+			connection = await queryHandler.open(config);
 
 			let tableList;
 
@@ -197,7 +215,7 @@ class DatabaseService {
 					throw new Error("Unsupported database type");
 			}
 
-			await connectionHandler.close(connection, config.dialect);
+			await queryHandler.close(connection, config.dialect);
 
 			return {
 				status: "success",
@@ -212,15 +230,13 @@ class DatabaseService {
 	async createTable(data) {
 		let connection;
 		try {
-			const config = await DatabaseRepository.findForConnection(
-				data.database_id
-			);
+			const { database_id, tables } = data;
+
+			const config = await DatabaseRepository.findForConnection(database_id);
 
 			if (config.type !== "lake") {
 				throw Object.assign(
-					new Error(
-						"Hanya database dengan tipe 'lake' yang diperbolehkan membuat tabel."
-					),
+					new Error("Hanya database dengan tipe 'lake' yang diperbolehkan."),
 					{ code: 400 }
 				);
 			}
@@ -229,25 +245,16 @@ class DatabaseService {
 				config.password = passwordHandler.decryptSymmetric(config.password);
 			}
 
-			connection = await connectionHandler.open(config);
+			connection = await queryHandler.openConnection(config);
 
-			// Gabungkan semua query tabel
-			const tableQueries = data.tables.map((table) =>
-				buildCreateTableQuery(table)
-			);
+			const query = await queryHandler.createTable(tables, connection);
 
-			const fullQuery = ["START TRANSACTION;", ...tableQueries, "COMMIT;"].join(
-				"\n\n"
-			);
-
-			await connection.query(fullQuery);
-
-			await connectionHandler.close(connection, config.dialect);
+			await queryHandler.closeConnection(connection, config.dialect);
 
 			return {
 				status: "success",
-				message: `Berhasil membuat ${data.tables.length} tabel di database lake.`,
-				query: fullQuery,
+				message: `Berhasil membuat ${tables.length} tabel di database lake.`,
+				query: query,
 			};
 		} catch (error) {
 			if (connection) {
