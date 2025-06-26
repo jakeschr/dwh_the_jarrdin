@@ -267,34 +267,73 @@ const queryHandler = {
 				}
 
 				case "sybase": {
-					const tables = await connection.query(
-						`SELECT name FROM sysobjects WHERE type = 'U'`
-					);
-					for (const row of tables) {
-						const table = row.name;
-						const cols = await connection.query(
-							`SELECT c.name AS name, t.name AS type, c.isnullable AS is_nullable
-							 FROM syscolumns c JOIN systypes t ON c.usertype = t.usertype
-							 WHERE c.id = object_id(?)`,
-							[table]
-						);
-						const pks = await connection.query(
-							`SELECT c.name
-							 FROM sysindexes i
-							 JOIN sysindexkeys ik ON i.id = ik.id AND i.indid = ik.indid
-							 JOIN syscolumns c ON ik.id = c.id AND ik.colid = c.colid
-							 WHERE i.id = object_id(?) AND (i.status & 2048) = 2048`,
-							[table]
-						);
-						result.tables.push({
-							name: table,
-							pk: pks.map((r) => r.name),
-							columns: cols.map((c) => ({
-								name: c.name,
-								type: c.type,
-								null: c.is_nullable !== 0,
-							})),
-						});
+					const resTables = await connection.query(`
+						SELECT table_id, table_name
+						FROM systable
+						WHERE table_type = 'BASE' AND creator = USER_ID()
+					`);
+					const tables = resTables.map((row) => ({
+						id: row.table_id,
+						name: row.table_name,
+					}));
+
+					for (const { id: tableId, name: tableName } of tables) {
+						// Kolom
+						let resCols;
+						try {
+							resCols = await connection.query(
+								`
+								SELECT c.column_name,
+										c."nulls",
+										d.domain_name AS type
+								FROM syscolumn c
+								LEFT JOIN sysdomain d ON c.domain_id = d.domain_id
+								WHERE c.table_id = ?
+							`,
+								[tableId]
+							);
+						} catch (err) {
+							// fallback jika sysdomain error
+							resCols = await connection.query(
+								`
+								SELECT column_name, "nulls", 'unknown' AS type
+								FROM syscolumn
+								WHERE table_id = ?
+							`,
+								[tableId]
+							);
+						}
+
+						const columns = resCols.map((col) => ({
+							name: col.column_name,
+							type: col.type || "unknown",
+							null: col.nulls === "Y",
+						}));
+
+						// Primary key
+						// Primary key
+						let resPK = [];
+						try {
+							resPK = await connection.query(
+								`
+								SELECT c.column_name
+								FROM sysindex i
+								INNER JOIN sysindexkey ik ON i.table_id = ik.table_id AND i.index_id = ik.index_id
+								INNER JOIN syscolumn c ON c.table_id = ik.table_id AND c.column_id = ik.column_id
+								WHERE i.table_id = ? AND BITAND(i.status, 2048) = 2048
+								`,
+								[tableId]
+							);							
+						} catch (err) {
+							console.warn(
+								`Gagal ambil PK untuk tabel ${tableName}:`,
+								err.message
+							);
+						}
+
+						const pk = resPK.map((col) => col.column_name);
+
+						result.tables.push({ name: tableName, pk, columns });
 					}
 					break;
 				}
@@ -325,7 +364,7 @@ const queryHandler = {
 			throw error;
 		}
 	},
-	
+
 	async createTable(tables, connection) {
 		try {
 			const createQuery = tables.map((table) => {
