@@ -4,6 +4,7 @@ const { MongoClient } = require("mongodb");
 const sql = require("mssql");
 const odbc = require("odbc");
 const oracledb = require("oracledb");
+const fs = require("fs");
 
 const queryHandler = {
 	async openConnection(config) {
@@ -131,7 +132,7 @@ const queryHandler = {
 			throw new Error("Koneksi dan dialect harus diberikan.");
 		}
 
-		const result = {
+		let result = {
 			database: databaseName || null,
 			tables: [],
 		};
@@ -266,73 +267,77 @@ const queryHandler = {
 					break;
 				}
 
-				case "sybase": {
-					const resTables = await connection.query(`
-						SELECT table_id, table_name
-						FROM systable
-						WHERE table_type = 'BASE' AND creator = USER_ID()
-					`);
-					const tables = resTables.map((row) => ({
+				case "sybase":
+					const resTablesX = await connection.query(`
+        SELECT table_id, table_name
+        FROM systable
+        WHERE table_type = 'BASE' AND creator = USER_ID()
+    `);
+
+					const tablesX = resTablesX.map((row) => ({
 						id: row.table_id,
 						name: row.table_name,
 					}));
 
-					for (const { id: tableId, name: tableName } of tables) {
-						// Kolom
-						let resCols;
+					result.tables = [];
+
+					for (const { id: tableId, name: tableName } of tablesX) {
+						// Ambil kolom
+						const resCols = await connection.query(
+							`
+            SELECT c.column_name, c."nulls", d.domain_name AS type, CAST(c.width AS int) AS width
+            FROM syscolumn c
+            LEFT JOIN sysdomain d ON c.domain_id = d.domain_id
+            WHERE c.table_id = ?
+            ORDER BY c.column_id
+        `,
+							[tableId]
+						);
+
+						const columns = resCols.map((col) => {
+							// Buat type + width jika applicable
+							const typeLower = col.type ? col.type.toLowerCase() : "unknown";
+							let typeString;
+							if (
+								["varchar", "char", "nvarchar", "nchar"].includes(typeLower)
+							) {
+								typeString = `${typeLower}(${col.width})`;
+							} else if (
+								["bigint", "int", "integer", "smallint"].includes(typeLower)
+							) {
+								typeString = `${typeLower}(${col.width})`; // sesuai konvensi, atau hilangkan jika ingin simple
+							} else {
+								typeString = typeLower;
+							}
+
+							return {
+								name: col.column_name,
+								type: typeString,
+								null: col.nulls === "Y",
+							};
+						});
+
+						// Ambil pk
+						let resPKCols = [];
 						try {
-							resCols = await connection.query(
+							resPKCols = await connection.query(
 								`
-								SELECT c.column_name,
-										c."nulls",
-										d.domain_name AS type
-								FROM syscolumn c
-								LEFT JOIN sysdomain d ON c.domain_id = d.domain_id
-								WHERE c.table_id = ?
-							`,
-								[tableId]
+        						SELECT COLUMN_NAME FROM sp_pkeys(?);
+    							`,
+								[tableName]
 							);
 						} catch (err) {
-							// fallback jika sysdomain error
-							resCols = await connection.query(
-								`
-								SELECT column_name, "nulls", 'unknown' AS type
-								FROM syscolumn
-								WHERE table_id = ?
-							`,
-								[tableId]
-							);
+							console.warn(`Gagal ambil PK untuk tabel ${tableName}:`, err);
 						}
+						const pk = resPKCols.map((col) => col.COLUMN_NAME);
 
-						const columns = resCols.map((col) => ({
-							name: col.column_name,
-							type: col.type || "unknown",
-							null: col.nulls === "Y",
-						}));
-
-						// Ambil semua kolom yang termasuk dalam indeks, bukan hanya PK
-						let resIndexedCols = [];
-						try {
-							resIndexedCols = await connection.query(
-								`
-								SELECT DISTINCT c.column_name
-								FROM sysidxcol ic
-								JOIN syscolumn c ON ic.table_id = c.table_id AND ic.column_id = c.column_id
-								WHERE ic.table_id = ?
-								ORDER BY c.column_name
-								`,
-								[tableId]
-							);
-						} catch (err) {
-							console.warn(`Gagal ambil indeks untuk tabel ${tableName}:`, err);
-						}
-
-						const index = resIndexedCols.map((col) => col.column_name);
-
-						result.tables.push({ name: tableName, index, columns });
+						result.tables.push({
+							name: tableName,
+							pk,
+							columns,
+						});
 					}
 					break;
-				}
 
 				case "mongodb": {
 					const db = connection.db(databaseName);
@@ -375,13 +380,6 @@ const queryHandler = {
 					);
 				}
 
-				// Hapus pengecekan minimal 2 PK karena jika kosong berarti tidak ada PK
-				if (!Array.isArray(pk)) {
-					throw new Error(
-						`Tabel '${name}' harus memiliki 'pk' sebagai array (bisa kosong jika tanpa primary key).`
-					);
-				}
-
 				const colDefs = columns.map((col) => {
 					if (!col.name || !col.type) {
 						throw new Error(
@@ -417,56 +415,6 @@ const queryHandler = {
 			throw error;
 		}
 	},
-
-	// async createTable(tables, connection) {
-	// 	try {
-	// 		const createQuery = tables.map((table) => {
-	// 			const { name, columns, pk } = table;
-
-	// 			if (!name || typeof name !== "string") {
-	// 				throw new Error("Tabel harus memiliki nama yang valid.");
-	// 			}
-	// 			if (!Array.isArray(columns) || columns.length === 0) {
-	// 				throw new Error(
-	// 					`Tabel '${name}' harus memiliki setidaknya satu kolom.`
-	// 				);
-	// 			}
-
-	// 			if (!Array.isArray(pk) || pk.length < 2) {
-	// 				throw new Error(
-	// 					`Tabel '${name}' harus memiliki minimal dua kolom primary key.`
-	// 				);
-	// 			}
-
-	// 			const colDefs = columns.map((col) => {
-	// 				if (!col.name || !col.type) {
-	// 					throw new Error(
-	// 						`Kolom di tabel '${name}' harus memiliki 'name' dan 'type'.`
-	// 					);
-	// 				}
-	// 				const nullable = col.null === false ? "NOT NULL" : "NULL";
-	// 				return `  \`${col.name}\` ${col.type} ${nullable}`;
-	// 			});
-
-	// 			const pkDef = `  PRIMARY KEY (${pk.map((k) => `\`${k}\``).join(", ")})`;
-
-	// 			return `CREATE TABLE IF NOT EXISTS \`${name}\` (\n${[
-	// 				...colDefs,
-	// 				pkDef,
-	// 			].join(",\n")}\n);`;
-	// 		});
-
-	// 		const fullQuery = ["START TRANSACTION;", ...createQuery, "COMMIT;"].join(
-	// 			"\n\n"
-	// 		);
-
-	// 		await connection.query(fullQuery);
-
-	// 		return fullQuery;
-	// 	} catch (error) {
-	// 		throw error;
-	// 	}
-	// },
 };
 
 module.exports = { queryHandler };
