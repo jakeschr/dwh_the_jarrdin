@@ -374,9 +374,11 @@ const queryHandler = {
 						`Tabel '${name}' harus memiliki setidaknya satu kolom.`
 					);
 				}
-				if (!Array.isArray(pk) || pk.length < 2) {
+
+				// Hapus pengecekan minimal 2 PK karena jika kosong berarti tidak ada PK
+				if (!Array.isArray(pk)) {
 					throw new Error(
-						`Tabel '${name}' harus memiliki minimal dua kolom primary key.`
+						`Tabel '${name}' harus memiliki 'pk' sebagai array (bisa kosong jika tanpa primary key).`
 					);
 				}
 
@@ -390,12 +392,18 @@ const queryHandler = {
 					return `  \`${col.name}\` ${col.type} ${nullable}`;
 				});
 
-				const pkDef = `  PRIMARY KEY (${pk.map((k) => `\`${k}\``).join(", ")})`;
+				// Jika PK tidak kosong, tambahkan PRIMARY KEY, jika kosong abaikan
+				const pkDef =
+					pk.length > 0
+						? `  PRIMARY KEY (${pk.map((k) => `\`${k}\``).join(", ")})`
+						: null;
 
-				return `CREATE TABLE IF NOT EXISTS \`${name}\` (\n${[
-					...colDefs,
-					pkDef,
-				].join(",\n")}\n);`;
+				const tableDef = [...colDefs];
+				if (pkDef) tableDef.push(pkDef);
+
+				return `CREATE TABLE IF NOT EXISTS \`${name}\` (\n${tableDef.join(
+					",\n"
+				)}\n);`;
 			});
 
 			const fullQuery = ["START TRANSACTION;", ...createQuery, "COMMIT;"].join(
@@ -409,6 +417,56 @@ const queryHandler = {
 			throw error;
 		}
 	},
+
+	// async createTable(tables, connection) {
+	// 	try {
+	// 		const createQuery = tables.map((table) => {
+	// 			const { name, columns, pk } = table;
+
+	// 			if (!name || typeof name !== "string") {
+	// 				throw new Error("Tabel harus memiliki nama yang valid.");
+	// 			}
+	// 			if (!Array.isArray(columns) || columns.length === 0) {
+	// 				throw new Error(
+	// 					`Tabel '${name}' harus memiliki setidaknya satu kolom.`
+	// 				);
+	// 			}
+
+	// 			if (!Array.isArray(pk) || pk.length < 2) {
+	// 				throw new Error(
+	// 					`Tabel '${name}' harus memiliki minimal dua kolom primary key.`
+	// 				);
+	// 			}
+
+	// 			const colDefs = columns.map((col) => {
+	// 				if (!col.name || !col.type) {
+	// 					throw new Error(
+	// 						`Kolom di tabel '${name}' harus memiliki 'name' dan 'type'.`
+	// 					);
+	// 				}
+	// 				const nullable = col.null === false ? "NOT NULL" : "NULL";
+	// 				return `  \`${col.name}\` ${col.type} ${nullable}`;
+	// 			});
+
+	// 			const pkDef = `  PRIMARY KEY (${pk.map((k) => `\`${k}\``).join(", ")})`;
+
+	// 			return `CREATE TABLE IF NOT EXISTS \`${name}\` (\n${[
+	// 				...colDefs,
+	// 				pkDef,
+	// 			].join(",\n")}\n);`;
+	// 		});
+
+	// 		const fullQuery = ["START TRANSACTION;", ...createQuery, "COMMIT;"].join(
+	// 			"\n\n"
+	// 		);
+
+	// 		await connection.query(fullQuery);
+
+	// 		return fullQuery;
+	// 	} catch (error) {
+	// 		throw error;
+	// 	}
+	// },
 };
 
 module.exports = { queryHandler };
