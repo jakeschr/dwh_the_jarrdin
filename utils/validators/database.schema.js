@@ -234,10 +234,6 @@ const databaseSchema = {
 							"string.max": `'name' must not exceed 100 characters.`,
 							"any.required": `'name' is required.`,
 						}),
-						pk: Joi.array().items(Joi.string()).required().messages({
-							"array.base": `'pk' must be an array of strings.`,
-							"any.required": `'pk' is required.`,
-						}),
 						columns: Joi.array()
 							.items(
 								Joi.object({

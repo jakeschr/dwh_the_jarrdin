@@ -143,3 +143,240 @@ async function databaseInfo(connection, dialect, databaseName) {
 		throw new Error(`Gagal mengambil metadata: ${err.message}`);
 	}
 }
+
+async function databaseInfo(connection, dialect, databaseName) {
+	if (!connection || !dialect) {
+		throw new Error("Koneksi dan dialect harus diberikan.");
+	}
+
+	let result = {
+		database: databaseName || null,
+		tables: [],
+	};
+
+	const normalizeColumn = (col) => ({
+		name: col.name,
+		type: col.type,
+		null: col.nullable,
+	});
+
+	try {
+		switch (dialect) {
+			case "mysql": {
+				const [tables] = await connection.query(
+					`SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'`,
+					[databaseName]
+				);
+
+				for (const row of tables) {
+					const table = row.table_name;
+					const [cols] = await connection.query(
+						`SELECT column_name AS name, column_type AS type, is_nullable FROM information_schema.columns WHERE table_schema = ? AND table_name = ?`,
+						[databaseName, table]
+					);
+					const [pks] = await connection.query(
+						`SELECT column_name FROM information_schema.key_column_usage WHERE table_schema = ? AND table_name = ? AND constraint_name = 'PRIMARY'`,
+						[databaseName, table]
+					);
+					result.tables.push({
+						name: table,
+						pk: pks.map((r) => r.column_name),
+						columns: cols.map((c) => ({
+							name: c.name,
+							type: c.type,
+							null: c.is_nullable !== "NO",
+						})),
+					});
+				}
+				break;
+			}
+
+			case "postgres": {
+				const tables = await connection.query(
+					`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`
+				);
+
+				for (const row of tables.rows) {
+					const table = row.table_name;
+					const cols = await connection.query(
+						`SELECT column_name AS name, data_type AS type, is_nullable FROM information_schema.columns WHERE table_name = $1 AND table_schema = 'public'`,
+						[table]
+					);
+					const pk = await connection.query(
+						`SELECT a.attname AS column_name
+						 FROM pg_index i
+						 JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+						 WHERE i.indrelid = $1::regclass AND i.indisprimary`,
+						[table]
+					);
+
+					result.tables.push({
+						name: table,
+						pk: pk.rows.map((r) => r.column_name),
+						columns: cols.rows.map((c) => ({
+							name: c.name,
+							type: c.type,
+							null: c.is_nullable !== "NO",
+						})),
+					});
+				}
+				break;
+			}
+
+			case "sqlserver": {
+				const tables = await connection
+					.request()
+					.query(
+						`SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE'`
+					);
+
+				for (const row of tables.recordset) {
+					const table = row.table_name;
+					const cols = await connection
+						.request()
+						.query(
+							`SELECT column_name AS name, data_type AS type, is_nullable FROM information_schema.columns WHERE table_name = '${table}'`
+						);
+					const pks = await connection
+						.request()
+						.query(
+							`SELECT column_name FROM information_schema.key_column_usage WHERE table_name = '${table}' AND constraint_name LIKE 'PK_%'`
+						);
+					result.tables.push({
+						name: table,
+						pk: pks.recordset.map((r) => r.column_name),
+						columns: cols.recordset.map((c) => ({
+							name: c.name,
+							type: c.type,
+							null: c.is_nullable !== "NO",
+						})),
+					});
+				}
+				break;
+			}
+
+			case "oracle": {
+				const tables = await connection.execute(
+					`SELECT table_name FROM user_tables`
+				);
+				for (const [table] of tables.rows) {
+					const cols = await connection.execute(
+						`SELECT column_name AS name, data_type AS type, nullable FROM user_tab_columns WHERE table_name = :1`,
+						[table]
+					);
+					const pks = await connection.execute(
+						`SELECT cols.column_name
+						 FROM all_constraints cons
+						 JOIN all_cons_columns cols ON cons.constraint_name = cols.constraint_name
+						 WHERE cons.constraint_type = 'P' AND cons.table_name = :1`,
+						[table]
+					);
+					result.tables.push({
+						name: table,
+						pk: pks.rows.map(([col]) => col),
+						columns: cols.rows.map(([name, type, nullable]) => ({
+							name,
+							type,
+							null: nullable === "Y",
+						})),
+					});
+				}
+				break;
+			}
+
+			case "sybase":
+				const resTablesX = await connection.query(`
+	  SELECT table_id, table_name
+	  FROM systable
+	  WHERE table_type = 'BASE' AND creator = USER_ID()
+ `);
+
+				const tablesX = resTablesX.map((row) => ({
+					id: row.table_id,
+					name: row.table_name,
+				}));
+
+				result.tables = [];
+
+				for (const { id: tableId, name: tableName } of tablesX) {
+					// Ambil kolom
+					const resCols = await connection.query(
+						`
+			SELECT c.column_name, c."nulls", d.domain_name AS type, CAST(c.width AS int) AS width
+			FROM syscolumn c
+			LEFT JOIN sysdomain d ON c.domain_id = d.domain_id
+			WHERE c.table_id = ?
+			ORDER BY c.column_id
+	  `,
+						[tableId]
+					);
+
+					const columns = resCols.map((col) => {
+						// Buat type + width jika applicable
+						const typeLower = col.type ? col.type.toLowerCase() : "unknown";
+						let typeString;
+						if (["varchar", "char", "nvarchar", "nchar"].includes(typeLower)) {
+							typeString = `${typeLower}(${col.width})`;
+						} else if (
+							["bigint", "int", "integer", "smallint"].includes(typeLower)
+						) {
+							typeString = `${typeLower}(${col.width})`; // sesuai konvensi, atau hilangkan jika ingin simple
+						} else {
+							typeString = typeLower;
+						}
+
+						return {
+							name: col.column_name,
+							type: typeString,
+							null: col.nulls === "Y",
+						};
+					});
+
+					// Ambil pk
+					let resPKCols = [];
+					try {
+						resPKCols = await connection.query(
+							`
+							  SELECT COLUMN_NAME FROM sp_pkeys(?);
+							 `,
+							[tableName]
+						);
+					} catch (err) {
+						console.warn(`Gagal ambil PK untuk tabel ${tableName}:`, err);
+					}
+					const pk = resPKCols.map((col) => col.COLUMN_NAME);
+
+					result.tables.push({
+						name: tableName,
+						pk,
+						columns,
+					});
+				}
+				break;
+
+			case "mongodb": {
+				const db = connection.db(databaseName);
+				const collections = await db.listCollections().toArray();
+				for (const col of collections) {
+					const sample = await db.collection(col.name).findOne();
+					const columns = Object.entries(sample || {}).map(([key, val]) => ({
+						name: key,
+						type: typeof val,
+						null: val === null,
+					}));
+					result.tables.push({ name: col.name, pk: [], columns });
+				}
+				break;
+			}
+
+			default:
+				throw new Error(
+					`Dialect '${dialect}' belum didukung secara eksplisit.`
+				);
+		}
+
+		return result;
+	} catch (error) {
+		throw error;
+	}
+}

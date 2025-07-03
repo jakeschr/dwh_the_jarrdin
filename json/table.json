@@ -1,673 +1,208 @@
 {
-	"database_id": "dtb-mcd4f26p-37a639",
+	"database_id": "dtb-mc7poch1-ae4ba3",
 	"tables": [
 		{
-			"name": "pbcattbl",
-			"pk": [],
+			"name": "apartment",
+			"pk": ["apartment_id"],
 			"columns": [
 				{
-					"name": "pbt_tnam",
-					"type": "char",
+					"name": "apartment_id",
+					"type": "varchar(50)",
 					"null": false
 				},
 				{
-					"name": "pbt_tid",
-					"type": "integer",
-					"null": true
-				},
-				{
-					"name": "pbt_ownr",
-					"type": "char",
+					"name": "tower",
+					"type": "varchar(3)",
 					"null": false
 				},
 				{
-					"name": "pbd_fhgt",
-					"type": "smallint",
-					"null": true
+					"name": "floor",
+					"type": "varchar(3)",
+					"null": false
 				},
 				{
-					"name": "pbd_fwgt",
-					"type": "smallint",
-					"null": true
+					"name": "unit",
+					"type": "varchar(3)",
+					"null": false
 				},
 				{
-					"name": "pbd_fitl",
-					"type": "char",
-					"null": true
+					"name": "type",
+					"type": "varchar(4)",
+					"null": false
 				},
 				{
-					"name": "pbd_funl",
-					"type": "char",
-					"null": true
+					"name": "area",
+					"type": "integer(4)",
+					"null": false
 				},
 				{
-					"name": "pbd_fchr",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbd_fptc",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbd_ffce",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbh_fhgt",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbh_fwgt",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbh_fitl",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbh_funl",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbh_fchr",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbh_fptc",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbh_ffce",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbl_fhgt",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbl_fwgt",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbl_fitl",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbl_funl",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbl_fchr",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbl_fptc",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbl_ffce",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbt_cmnt",
-					"type": "char",
+					"name": "timestamp",
+					"type": "bigint(8)",
 					"null": true
 				}
 			]
 		},
 		{
-			"name": "ap_invoiced",
-			"pk": [],
+			"name": "occupant",
+			"pk": ["occupant_id"],
 			"columns": [
 				{
-					"name": "inv_no",
-					"type": "varchar",
+					"name": "occupant_id",
+					"type": "varchar(50)",
 					"null": false
 				},
 				{
-					"name": "seq",
-					"type": "integer",
+					"name": "name",
+					"type": "varchar(200)",
 					"null": false
 				},
 				{
-					"name": "jurnal_type",
-					"type": "char",
+					"name": "email",
+					"type": "varchar(200)",
+					"null": false
+				},
+				{
+					"name": "phone",
+					"type": "varchar(20)",
+					"null": false
+				},
+				{
+					"name": "address",
+					"type": "long varchar",
 					"null": true
 				},
 				{
-					"name": "inv_method",
-					"type": "char",
+					"name": "timestamp",
+					"type": "bigint(8)",
 					"null": true
+				}
+			]
+		},
+		{
+			"name": "contract",
+			"pk": ["contract_id"],
+			"columns": [
+				{
+					"name": "contract_id",
+					"type": "varchar(50)",
+					"null": false
 				},
 				{
-					"name": "inv_end",
+					"name": "apartment_id",
+					"type": "varchar(50)",
+					"null": false
+				},
+				{
+					"name": "occupant_id",
+					"type": "varchar(50)",
+					"null": false
+				},
+				{
+					"name": "start_date",
+					"type": "date",
+					"null": false
+				},
+				{
+					"name": "end_date",
 					"type": "date",
 					"null": true
 				},
 				{
-					"name": "tax_code",
-					"type": "varchar",
-					"null": true
-				},
-				{
-					"name": "vat_amount",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "total_amount",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "amortize_start",
-					"type": "date",
-					"null": true
-				},
-				{
-					"name": "allocated_amount",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "description",
-					"type": "varchar",
-					"null": true
-				},
-				{
-					"name": "bill_id",
-					"type": "bigint",
-					"null": true
-				},
-				{
-					"name": "penalty_amount",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "pay_net",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "pay_pph",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "cn_vat",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "status_potong_pph",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pph",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "luas",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "status_tax",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "custom",
-					"type": "integer",
-					"null": true
-				},
-				{
-					"name": "type_bill",
-					"type": "varchar",
-					"null": true
-				},
-				{
-					"name": "coa",
-					"type": "varchar",
-					"null": true
-				},
-				{
-					"name": "inv_start",
-					"type": "date",
-					"null": true
-				},
-				{
-					"name": "rate",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "disc_amount",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "net_amount",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "amortize_status",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "amortize_end",
-					"type": "date",
-					"null": true
-				},
-				{
-					"name": "cn_amount",
-					"type": "numeric",
-					"null": true
-				},
-				{
-					"name": "kode_unit",
-					"type": "varchar",
-					"null": true
-				},
-				{
-					"name": "status_schedule_billing",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pph_amount",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "pay_vat",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "cn_net",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "cn_pph",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "status_bayar",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "rate_billing",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "interval",
-					"type": "integer",
-					"null": true
-				},
-				{
-					"name": "status_custom",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pph_id",
-					"type": "varchar",
-					"null": true
-				}
-			]
-		},
-		{
-			"name": "ap_supplier_billing",
-			"pk": [],
-			"columns": [
-				{
-					"name": "supplier_id",
-					"type": "varchar",
+					"name": "amount",
+					"type": "double",
 					"null": false
 				},
 				{
-					"name": "seq",
-					"type": "integer",
-					"null": false
-				},
-				{
-					"name": "status_bill",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "type_bill",
-					"type": "varchar",
-					"null": true
-				},
-				{
-					"name": "rate",
-					"type": "decimal",
-					"null": true
-				},
-				{
-					"name": "status_tax",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "interval",
-					"type": "integer",
-					"null": true
-				},
-				{
-					"name": "next_bill",
-					"type": "date",
-					"null": true
-				},
-				{
-					"name": "materai",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pph_id",
-					"type": "varchar",
-					"null": true
-				},
-				{
-					"name": "pph",
-					"type": "decimal",
-					"null": true
-				}
-			]
-		},
-		{
-			"name": "pbcatcol",
-			"pk": [],
-			"columns": [
-				{
-					"name": "pbc_tnam",
-					"type": "char",
-					"null": false
-				},
-				{
-					"name": "pbc_tid",
-					"type": "integer",
-					"null": true
-				},
-				{
-					"name": "pbc_ownr",
-					"type": "char",
-					"null": false
-				},
-				{
-					"name": "pbc_cnam",
-					"type": "char",
-					"null": false
-				},
-				{
-					"name": "pbc_cid",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbc_labl",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbc_lpos",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbc_hdr",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbc_hpos",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbc_jtfy",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbc_mask",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbc_case",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbc_hght",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbc_wdth",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbc_ptrn",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbc_bmap",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbc_init",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbc_cmnt",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbc_edit",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbc_tag",
-					"type": "char",
-					"null": true
-				}
-			]
-		},
-		{
-			"name": "pbcatfmt",
-			"pk": [],
-			"columns": [
-				{
-					"name": "pbf_name",
-					"type": "char",
-					"null": false
-				},
-				{
-					"name": "pbf_frmt",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbf_type",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbf_cntr",
-					"type": "integer",
-					"null": true
-				}
-			]
-		},
-		{
-			"name": "pbcatvld",
-			"pk": [],
-			"columns": [
-				{
-					"name": "pbv_name",
-					"type": "char",
-					"null": false
-				},
-				{
-					"name": "pbv_vald",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbv_type",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbv_cntr",
-					"type": "integer",
-					"null": true
-				},
-				{
-					"name": "pbv_msg",
-					"type": "char",
-					"null": true
-				}
-			]
-		},
-		{
-			"name": "pbcatedt",
-			"pk": [],
-			"columns": [
-				{
-					"name": "pbe_name",
-					"type": "char",
-					"null": false
-				},
-				{
-					"name": "pbe_edit",
-					"type": "char",
-					"null": true
-				},
-				{
-					"name": "pbe_type",
-					"type": "smallint",
-					"null": true
-				},
-				{
-					"name": "pbe_cntr",
-					"type": "integer",
-					"null": true
-				},
-				{
-					"name": "pbe_seqn",
-					"type": "smallint",
-					"null": false
-				},
-				{
-					"name": "pbe_flag",
-					"type": "integer",
-					"null": true
-				},
-				{
-					"name": "pbe_work",
-					"type": "char",
-					"null": true
-				}
-			]
-		},
-		{
-			"name": "master_kode_periode",
-			"pk": [],
-			"columns": [
-				{
-					"name": "periode",
-					"type": "varchar",
-					"null": false
-				},
-				{
-					"name": "tahun",
-					"type": "varchar",
-					"null": false
-				},
-				{
-					"name": "tgl_akhir",
-					"type": "date",
+					"name": "type",
+					"type": "varchar(10)",
 					"null": false
 				},
 				{
 					"name": "status",
-					"type": "char",
+					"type": "varchar(10)",
 					"null": false
+				},
+				{
+					"name": "timestamp",
+					"type": "bigint(8)",
+					"null": true
 				}
 			]
 		},
 		{
-			"name": "master_kode_periode_thn",
-			"pk": [],
+			"name": "invoice",
+			"pk": ["invoice_id"],
 			"columns": [
 				{
-					"name": "tgl_awal",
+					"name": "invoice_id",
+					"type": "varchar(50)",
+					"null": false
+				},
+				{
+					"name": "contract_id",
+					"type": "varchar(50)",
+					"null": false
+				},
+				{
+					"name": "due_date",
 					"type": "date",
 					"null": false
 				},
 				{
-					"name": "status",
-					"type": "char",
+					"name": "amount",
+					"type": "double",
 					"null": false
 				},
 				{
-					"name": "tahun",
-					"type": "varchar",
+					"name": "type",
+					"type": "varchar(20)",
 					"null": false
+				},
+				{
+					"name": "status",
+					"type": "varchar(10)",
+					"null": false
+				},
+				{
+					"name": "timestamp",
+					"type": "bigint(8)",
+					"null": true
 				}
 			]
 		},
 		{
-			"name": "master_jurnal_type",
-			"pk": [],
+			"name": "payment",
+			"pk": ["payment_id"],
 			"columns": [
 				{
-					"name": "prefix",
-					"type": "char",
+					"name": "payment_id",
+					"type": "varchar(50)",
 					"null": false
 				},
 				{
-					"name": "desk",
-					"type": "varchar",
+					"name": "invoice_id",
+					"type": "varchar(50)",
 					"null": false
+				},
+				{
+					"name": "payment_date",
+					"type": "date",
+					"null": false
+				},
+				{
+					"name": "payment_amount",
+					"type": "double",
+					"null": false
+				},
+				{
+					"name": "payment_method",
+					"type": "varchar(10)",
+					"null": false
+				},
+				{
+					"name": "timestamp",
+					"type": "bigint(8)",
+					"null": true
 				}
 			]
 		}

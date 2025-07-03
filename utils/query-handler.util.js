@@ -132,16 +132,7 @@ const queryHandler = {
 			throw new Error("Koneksi dan dialect harus diberikan.");
 		}
 
-		let result = {
-			database: databaseName || null,
-			tables: [],
-		};
-
-		const normalizeColumn = (col) => ({
-			name: col.name,
-			type: col.type,
-			null: col.nullable,
-		});
+		const result = [];
 
 		try {
 			switch (dialect) {
@@ -157,13 +148,9 @@ const queryHandler = {
 							`SELECT column_name AS name, column_type AS type, is_nullable FROM information_schema.columns WHERE table_schema = ? AND table_name = ?`,
 							[databaseName, table]
 						);
-						const [pks] = await connection.query(
-							`SELECT column_name FROM information_schema.key_column_usage WHERE table_schema = ? AND table_name = ? AND constraint_name = 'PRIMARY'`,
-							[databaseName, table]
-						);
-						result.tables.push({
+
+						result.push({
 							name: table,
-							pk: pks.map((r) => r.column_name),
 							columns: cols.map((c) => ({
 								name: c.name,
 								type: c.type,
@@ -185,17 +172,9 @@ const queryHandler = {
 							`SELECT column_name AS name, data_type AS type, is_nullable FROM information_schema.columns WHERE table_name = $1 AND table_schema = 'public'`,
 							[table]
 						);
-						const pk = await connection.query(
-							`SELECT a.attname AS column_name
-							 FROM pg_index i
-							 JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
-							 WHERE i.indrelid = $1::regclass AND i.indisprimary`,
-							[table]
-						);
 
-						result.tables.push({
+						result.push({
 							name: table,
-							pk: pk.rows.map((r) => r.column_name),
 							columns: cols.rows.map((c) => ({
 								name: c.name,
 								type: c.type,
@@ -220,14 +199,9 @@ const queryHandler = {
 							.query(
 								`SELECT column_name AS name, data_type AS type, is_nullable FROM information_schema.columns WHERE table_name = '${table}'`
 							);
-						const pks = await connection
-							.request()
-							.query(
-								`SELECT column_name FROM information_schema.key_column_usage WHERE table_name = '${table}' AND constraint_name LIKE 'PK_%'`
-							);
-						result.tables.push({
+
+						result.push({
 							name: table,
-							pk: pks.recordset.map((r) => r.column_name),
 							columns: cols.recordset.map((c) => ({
 								name: c.name,
 								type: c.type,
@@ -247,16 +221,9 @@ const queryHandler = {
 							`SELECT column_name AS name, data_type AS type, nullable FROM user_tab_columns WHERE table_name = :1`,
 							[table]
 						);
-						const pks = await connection.execute(
-							`SELECT cols.column_name
-							 FROM all_constraints cons
-							 JOIN all_cons_columns cols ON cons.constraint_name = cols.constraint_name
-							 WHERE cons.constraint_type = 'P' AND cons.table_name = :1`,
-							[table]
-						);
-						result.tables.push({
+
+						result.push({
 							name: table,
-							pk: pks.rows.map(([col]) => col),
 							columns: cols.rows.map(([name, type, nullable]) => ({
 								name,
 								type,
@@ -267,35 +234,31 @@ const queryHandler = {
 					break;
 				}
 
-				case "sybase":
-					const resTablesX = await connection.query(`
-        SELECT table_id, table_name
-        FROM systable
-        WHERE table_type = 'BASE' AND creator = USER_ID()
-    `);
+				case "sybase": {
+					const resTables = await connection.query(`
+							 SELECT table_id, table_name
+							 FROM systable
+							 WHERE table_type = 'BASE' AND creator = USER_ID()
+						`);
 
-					const tablesX = resTablesX.map((row) => ({
+					const tables = resTables.map((row) => ({
 						id: row.table_id,
 						name: row.table_name,
 					}));
 
-					result.tables = [];
-
-					for (const { id: tableId, name: tableName } of tablesX) {
-						// Ambil kolom
+					for (const { id: tableId, name: tableName } of tables) {
 						const resCols = await connection.query(
 							`
-            SELECT c.column_name, c."nulls", d.domain_name AS type, CAST(c.width AS int) AS width
-            FROM syscolumn c
-            LEFT JOIN sysdomain d ON c.domain_id = d.domain_id
-            WHERE c.table_id = ?
-            ORDER BY c.column_id
-        `,
+								  SELECT c.column_name, c."nulls", d.domain_name AS type, CAST(c.width AS int) AS width
+								  FROM syscolumn c
+								  LEFT JOIN sysdomain d ON c.domain_id = d.domain_id
+								  WHERE c.table_id = ?
+								  ORDER BY c.column_id
+							 `,
 							[tableId]
 						);
 
 						const columns = resCols.map((col) => {
-							// Buat type + width jika applicable
 							const typeLower = col.type ? col.type.toLowerCase() : "unknown";
 							let typeString;
 							if (
@@ -305,7 +268,7 @@ const queryHandler = {
 							} else if (
 								["bigint", "int", "integer", "smallint"].includes(typeLower)
 							) {
-								typeString = `${typeLower}(${col.width})`; // sesuai konvensi, atau hilangkan jika ingin simple
+								typeString = `${typeLower}(${col.width})`;
 							} else {
 								typeString = typeLower;
 							}
@@ -317,27 +280,13 @@ const queryHandler = {
 							};
 						});
 
-						// Ambil pk
-						let resPKCols = [];
-						try {
-							resPKCols = await connection.query(
-								`
-        						SELECT COLUMN_NAME FROM sp_pkeys(?);
-    							`,
-								[tableName]
-							);
-						} catch (err) {
-							console.warn(`Gagal ambil PK untuk tabel ${tableName}:`, err);
-						}
-						const pk = resPKCols.map((col) => col.COLUMN_NAME);
-
-						result.tables.push({
+						result.push({
 							name: tableName,
-							pk,
 							columns,
 						});
 					}
 					break;
+				}
 
 				case "mongodb": {
 					const db = connection.db(databaseName);
@@ -349,7 +298,10 @@ const queryHandler = {
 							type: typeof val,
 							null: val === null,
 						}));
-						result.tables.push({ name: col.name, pk: [], columns });
+						result.push({
+							name: col.name,
+							columns,
+						});
 					}
 					break;
 				}
@@ -369,35 +321,27 @@ const queryHandler = {
 	async createTable(tables, connection) {
 		try {
 			const createQuery = tables.map((table) => {
-				const { name, columns, pk } = table;
+				const { name, columns } = table;
 
-				if (!name || typeof name !== "string") {
-					throw new Error("Tabel harus memiliki nama yang valid.");
-				}
-				if (!Array.isArray(columns) || columns.length === 0) {
-					throw new Error(
-						`Tabel '${name}' harus memiliki setidaknya satu kolom.`
-					);
-				}
+				let hasLoadTimestamp = false;
 
-				const colDefs = columns.map((col) => {
-					if (!col.name || !col.type) {
-						throw new Error(
-							`Kolom di tabel '${name}' harus memiliki 'name' dan 'type'.`
-						);
+				const adjustedColumns = columns.map((col) => {
+					if (col.name === "load_timestamp") {
+						hasLoadTimestamp = true;
+						// Langsung paksa sesuai ketentuan tanpa cek
+						return `  \`load_timestamp\` BIGINT(20) NOT NULL`;
+					} else {
+						const nullable = col.null === false ? "NOT NULL" : "NULL";
+						return `  \`${col.name}\` ${col.type} ${nullable}`;
 					}
-					const nullable = col.null === false ? "NOT NULL" : "NULL";
-					return `  \`${col.name}\` ${col.type} ${nullable}`;
 				});
 
-				// Jika PK tidak kosong, tambahkan PRIMARY KEY, jika kosong abaikan
-				const pkDef =
-					pk.length > 0
-						? `  PRIMARY KEY (${pk.map((k) => `\`${k}\``).join(", ")})`
-						: null;
+				if (!hasLoadTimestamp) {
+					adjustedColumns.push(`  \`load_timestamp\` BIGINT(20) NOT NULL`);
+				}
+				
 
-				const tableDef = [...colDefs];
-				if (pkDef) tableDef.push(pkDef);
+				const tableDef = adjustedColumns;
 
 				return `CREATE TABLE IF NOT EXISTS \`${name}\` (\n${tableDef.join(
 					",\n"

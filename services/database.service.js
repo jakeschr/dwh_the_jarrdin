@@ -32,7 +32,7 @@ class DatabaseService {
 
 						const connection = await queryHandler.openConnection(result);
 
-						result.info = await queryHandler.databaseInfo(
+						result.tables = await queryHandler.databaseInfo(
 							connection,
 							result.dialect,
 							result.database
@@ -42,7 +42,7 @@ class DatabaseService {
 					} catch (error) {
 						console.error(error);
 
-						result.info = null;
+						result.tables = null;
 					}
 
 					break;
