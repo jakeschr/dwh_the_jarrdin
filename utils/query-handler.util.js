@@ -4,7 +4,6 @@ const { MongoClient } = require("mongodb");
 const sql = require("mssql");
 const odbc = require("odbc");
 const oracledb = require("oracledb");
-const fs = require("fs");
 
 const queryHandler = {
 	async openConnection(config) {
@@ -339,7 +338,6 @@ const queryHandler = {
 				if (!hasLoadTimestamp) {
 					adjustedColumns.push(`  \`load_timestamp\` BIGINT(20) NOT NULL`);
 				}
-				
 
 				const tableDef = adjustedColumns;
 
