@@ -3,7 +3,6 @@
 	"tables": [
 		{
 			"name": "apartment",
-			"pk": ["apartment_id"],
 			"columns": [
 				{
 					"name": "apartment_id",
@@ -44,7 +43,6 @@
 		},
 		{
 			"name": "occupant",
-			"pk": ["occupant_id"],
 			"columns": [
 				{
 					"name": "occupant_id",
@@ -80,7 +78,6 @@
 		},
 		{
 			"name": "contract",
-			"pk": ["contract_id"],
 			"columns": [
 				{
 					"name": "contract_id",
@@ -131,7 +128,6 @@
 		},
 		{
 			"name": "invoice",
-			"pk": ["invoice_id"],
 			"columns": [
 				{
 					"name": "invoice_id",
@@ -172,7 +168,6 @@
 		},
 		{
 			"name": "payment",
-			"pk": ["payment_id"],
 			"columns": [
 				{
 					"name": "payment_id",
