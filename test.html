@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Testing Jsoup Links</title>
+	</head>
+	<body>
+		<h1>Testing Jsoup Link Extraction</h1>
+
+		<!-- 3 tag <a> statis -->
+		<a href="https://en.wikipedia.org/wiki/Roger_Tomlinson">Roger Tomlinson</a
+		><br />
+		<a href="https://en.wikipedia.org/wiki/Geographic_information_system"
+			>Geographic information system</a
+		><br />
+		<a href="https://en.wikipedia.org/wiki/Technical_geography"
+			>Technical geography</a
+		><br />
+
+		<script>
+			// Menambahkan 2 tag <a> secara dinamis
+			const link4 = document.createElement("a");
+			link4.href = "https://en.wikipedia.org/wiki/Information_Age";
+			link4.textContent = "Information Age";
+			document.body.appendChild(link4);
+			document.body.appendChild(document.createElement("br"));
+
+			const link5 = document.createElement("a");
+			link5.href =
+				"https://en.wikipedia.org/wiki/United_Nations_Department_of_Economic_and_Social_Affairs#Divisions";
+			link5.textContent =
+				"United Nations Department of Economic and Social Affairs";
+			document.body.appendChild(link5);
+			document.body.appendChild(document.createElement("br"));
+		</script>
+	</body>
+</html>
