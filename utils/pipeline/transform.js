@@ -1,7 +1,7 @@
 const math = require("mathjs");
 const { timeHandler } = require("../time-handler.util");
 
-function transform({ data, configs, is_preview }) {
+function transform({ data, configs }) {
 	data.getTableByPath = function (path) {
 		const [scope, table, column] = path.split(".");
 
@@ -19,102 +19,92 @@ function transform({ data, configs, is_preview }) {
 		return rows;
 	};
 
+	const results = {};
+
 	for (const config of configs.sort((a, b) => a.order - b.order)) {
-		const { table, columns, transforms: actions, init_value } = config;
+		const { table, columns, transforms, init_value } = config;
 
-		// Ambil data awal
-		data.dst[table] = data.getTableByPath(init_value);
+		results[table] = { data: data.getTableByPath(init_value) || [], error: [] };
 
-		if (Array.isArray(actions) && actions.length > 0) {
+		if (Array.isArray(transforms) && transforms.length > 0) {
 			try {
-				// Eksekusi setiap action sesuai urutan
-				for (const action of actions.sort((a, b) => a.order - b.order)) {
-					const type = action.type;
-
-					switch (type) {
+				for (const trf of transforms.sort((a, b) => a.order - b.order)) {
+					switch (trf.type) {
 						case "map":
-							data.dst[table] = map({
-								data: data.dst[table],
-								column: action.column,
-								mapping: action.mapping,
+							results[table].data = map({
+								data: results[table].data,
+								column: trf.column,
+								mapping: trf.mapping,
 							});
 							break;
 						case "join":
-							data.dst[table] = join({
-								left_data: data.getTableByPath(action.left),
-								right_data: data.getTableByPath(action.right),
-								left_key: action.left.split(".").pop(),
-								right_key: action.right.split(".").pop(),
-								join_type: action.join_type,
+							results[table].data = join({
+								left_data: data.getTableByPath(trf.left),
+								right_data: data.getTableByPath(trf.right),
+								left_key: trf.left.split(".").pop(),
+								right_key: trf.right.split(".").pop(),
+								join_type: trf.join_type,
 							});
 							break;
 						case "filter":
-							data.dst[table] = filter({
-								data: data.dst[table],
-								column: action.column,
-								operator: action.operator,
-								value: action.value,
+							results[table].data = filter({
+								data: results[table].data,
+								column: trf.column,
+								operator: trf.operator,
+								value: trf.value,
 							});
 							break;
 						case "rename":
-							data.dst[table] = rename({
-								data: data.dst[table],
-								rename_from: action.rename_from,
-								rename_to: action.rename_to,
+							results[table].data = rename({
+								data: results[table].data,
+								rename_from: trf.rename_from,
+								rename_to: trf.rename_to,
 							});
 
 							break;
 						case "formula":
-							data.dst[table] = formula({
-								data: data.dst[table],
-								expression: action.expression,
-								as: action.as,
+							results[table].data = formula({
+								data: results[table].data,
+								expression: trf.expression,
+								as: trf.as,
 							});
 							break;
 						case "aggregate":
-							data.dst[table] = aggregate({
-								data: data.dst[table],
-								operation: action.operation,
-								column_target: action.target,
-								column_group_by: action.group_by,
-								as: action.as,
+							results[table].data = aggregate({
+								data: results[table].data,
+								operation: trf.operation,
+								column_target: trf.target,
+								column_group_by: trf.group_by,
+								as: trf.as,
 							});
 						case "time-format":
-							data.dst[table] = timeFormat({
-								data: data.dst[table],
-								columns: action.columns,
-								old_format: action.old_format,
-								new_format: action.new_format,
+							results[table].data = timeFormat({
+								data: results[table].data,
+								columns: trf.columns,
+								old_format: trf.old_format,
+								new_format: trf.new_format,
 							});
 							break;
 						default:
-							throw new Error(`Unsupported transform type: ${type}`);
+							throw new Error(`Unsupported transform type: ${trf.type}`);
 					}
 				}
 
-				// Bersihkan kolom agar hanya sesuai columns (jika ada)
-				if (columns && Array.isArray(columns)) {
-					data.dst[table] = (data.dst[table] || []).map((row) => {
-						const cleaned = {};
-						for (const key of columns) {
-							if (row.hasOwnProperty(key)) {
-								cleaned[key] = row[key];
-							}
+				results[table].data = (results[table].data || []).map((row) => {
+					const cleaned = {};
+					for (const key of columns) {
+						if (row.hasOwnProperty(key)) {
+							cleaned[key] = row[key];
 						}
-						return cleaned;
-					});
-				}
-
-				// Tentukan batas limit jika modenya adalah preview
-				if (is_preview) {
-					data.dst[table] = (data.dst[table] || []).slice(0, 25);
-				}
+					}
+					return cleaned;
+				});
 			} catch (error) {
-				data.dst[table] = error.message;
+				results[table].error = error;
 			}
 		}
 	}
-	return data.dst;
+	return results;
 }
 
 /**

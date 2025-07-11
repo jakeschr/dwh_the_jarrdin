@@ -1,8 +1,8 @@
 const { timeHandler } = require("../time-handler.util");
 
 async function load({ database, configs, data }) {
-	const results = {};
 	const { connection, type } = database;
+	const results = {};
 
 	for (const config of configs.sort((a, b) => a.order - b.order)) {
 		let { table, columns, unique } = config;

@@ -31,40 +31,21 @@ const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 			time_threshold: time_threshold,
 		});
 
-		for (const [table, data] of Object.entries(extractedData)) {
-			if (Array.isArray(data)) {
-				workingData.src[table] = data;
-				workingData.log.extract_log.push(
-					buildLog(table, "success", data, "extract")
-				);
-			} else {
-				workingData.src[table] = [];
-				workingData.log.extract_log.push(
-					buildLog(table, "error", data, "extract")
-				);
-			}
+		for (const [table, result] of Object.entries(extractedData)) {
+			workingData.src[table] = result.data;
+			workingData.log.extract_log.push(buildLog(table, result));
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
 		// 2. TRANSFORM
-		const transformedData = await transform({
+		const transformedData = transform({
 			data: workingData,
 			configs: destination.configs,
-			is_preview: is_preview,
 		});
 
-		for (const [table, data] of Object.entries(transformedData)) {
-			if (Array.isArray(data)) {
-				workingData.dst[table] = data;
-				workingData.log.transform_log.push(
-					buildLog(table, "success", data, "transform")
-				);
-			} else {
-				workingData.dst[table] = [];
-				workingData.log.transform_log.push(
-					buildLog(table, "error", data, "transform")
-				);
-			}
+		for (const [table, result] of Object.entries(transformedData)) {
+			workingData.dst[table] = result.data;
+			workingData.log.transform_log.push(buildLog(table, result));
 		}
 
 		if (is_preview === true) {
@@ -81,7 +62,7 @@ const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 		});
 
 		for (const [table, data] of Object.entries(loadedData)) {
-			workingData.log.load_log.push(buildLog(table, "success", data, "load"));
+			workingData.log.load_log.push(buildLog(table, data));
 		}
 
 		workingData.log.end_time = timeHandler.nowEpoch();
@@ -105,35 +86,23 @@ const runETL = async ({ source, destination, time_threshold, is_preview }) => {
 	}
 };
 
-function buildLog(name, status, result, type) {
-	if (type === "load") {
-		const dataLength = result.data.length;
-		const errorLength = result.error.length;
+function buildLog(name, result) {
+	const dataLength = result.data.length;
+	const errorLength = result.error.length;
 
-		if (dataLength > 0 && errorLength > 0) {
-			status = "partial";
-		} else if (dataLength > 0 && errorLength === 0) {
-			status = "success";
-		} else {
-			status = "error";
-		}
-
-		return {
-			status: status,
-			name: name,
-			count: dataLength,
-			message: `${dataLength} records ${type}ed.`,
-			error: result.error,
-		};
-	} else {
-		const count = Array.isArray(result) ? result.length : 0;
-		return {
-			status: status,
-			name: name,
-			count: count,
-			message: status === "success" ? `${count} records ${type}ed.` : result,
-		};
+	let status = "error";
+	if (dataLength > 0 && errorLength > 0) {
+		status = "partial";
+	} else if (dataLength > 0 && errorLength === 0) {
+		status = "success";
 	}
+
+	return {
+		status: status,
+		name: name,
+		count: dataLength,
+		errors: result.error,
+	};
 }
 
 module.exports = { runETL };
