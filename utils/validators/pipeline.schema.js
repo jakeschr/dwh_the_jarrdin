@@ -421,7 +421,7 @@ const dstObj = {
 						"any.required": `'unique' is a required in destination item.`,
 					}),
 				init_value: Joi.string()
-					.pattern(/^[a-z]+\.[a-z_]+$/)
+					.pattern(/^[a-zA-Z0-9]+\.[a-zA-Z0-9_]+$/)
 					.required()
 					.messages({
 						"string.pattern.base": `'init_value' must be in format scope.table (e.g. src.invoice).`,

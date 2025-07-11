@@ -50,14 +50,14 @@ class PipelineService {
 
 			const createdRow = await PipelineRepository.create(pipeline, dbTrx);
 
-			await LogRepository.create(
-				{
-					actor_id: session.user_id,
-					details: createdRow.dataValues,
-					action: "create",
-				},
-				dbTrx
-			);
+			// await LogRepository.create(
+			// 	{
+			// 		actor_id: session.user_id,
+			// 		details: createdRow.dataValues,
+			// 		action: "create",
+			// 	},
+			// 	dbTrx
+			// );
 
 			await dbTrx.commit();
 
@@ -85,14 +85,14 @@ class PipelineService {
 
 			const updatedRow = await PipelineRepository.update(pipeline, dbTrx);
 
-			await LogRepository.create(
-				{
-					actor_id: session.user_id,
-					details: updatedRow.dataValues,
-					action: "update",
-				},
-				dbTrx
-			);
+			// await LogRepository.create(
+			// 	{
+			// 		actor_id: session.user_id,
+			// 		details: updatedRow.dataValues,
+			// 		action: "update",
+			// 	},
+			// 	dbTrx
+			// );
 
 			await dbTrx.commit();
 
@@ -110,17 +110,17 @@ class PipelineService {
 
 			const deletedCount = await PipelineRepository.delete(data.id, dbTrx);
 
-			await LogRepository.create(
-				{
-					actor_id: session.user_id,
-					details: {
-						deleted_count: deletedCount,
-						id: data.id,
-					},
-					action: "delete",
-				},
-				dbTrx
-			);
+			// await LogRepository.create(
+			// 	{
+			// 		actor_id: session.user_id,
+			// 		details: {
+			// 			deleted_count: deletedCount,
+			// 			id: data.id,
+			// 		},
+			// 		action: "delete",
+			// 	},
+			// 	dbTrx
+			// );
 
 			await dbTrx.commit();
 
