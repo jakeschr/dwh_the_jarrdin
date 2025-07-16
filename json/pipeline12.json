@@ -1,0 +1,195 @@
+{
+	"pipeline_id": "pln-mcwx9m9n-cb1415",
+	"name": "Vinco to LAKE (12)",
+	"description": "ERROR: ODBC SQL execution error saat extract. SOLUSI: Cek koneksi dan query di database source",
+	"source": {
+		"database_id": "dtb-mcd4f26p-37a639",
+		"configs": [
+			{
+				"table": "master_unit_telp_detail",
+				"columns": [
+					"kode_unit",
+					"kode_pemilik_penyewa",
+					"no_telp",
+					"desc",
+					"type_pakai",
+					"status",
+					"seq"
+				],
+				"filters": null
+			},
+			{
+				"table": "master_bisnis_unit",
+				"columns": ["kode_bu", "nama_bu", "desc"],
+				"filters": null
+			},
+			{
+				"table": "master_acc",
+				"columns": ["kode", "tipe", "desc", "group"],
+				"filters": null
+			},
+			{
+				"table": "ar_profitsharing_daily",
+				"columns": [
+					"profitsharing_daily_id",
+					"date",
+					"contract_id",
+					"kode_unit",
+					"create_by",
+					"create_date",
+					"omzet",
+					"pendapatan_tanpa_ppn",
+					"pendapatan_kena_ppn",
+					"discount",
+					"pendapatan_sebelum_ppn",
+					"pb1",
+					"uang_diterima",
+					"voucher",
+					"ps_header",
+					"status"
+				],
+				"filters": null
+			},
+			{
+				"table": "ar_profitsharing_header",
+				"columns": [
+					"trans_ps_id",
+					"tanggal",
+					"awal",
+					"akhir",
+					"ps_id",
+					"type_bill",
+					"type_minimum",
+					"minimum_value",
+					"status_prog",
+					"status_potong_pb1",
+					"contract_id",
+					"kode_unit",
+					"desc",
+					"create_by",
+					"create_date",
+					"nilai_terbayar",
+					"desc_terbayar",
+					"total_omzet",
+					"total_pendapatan_tanpa_ppn",
+					"total_pendapatan_kena_ppn",
+					"total_discount",
+					"total_pendapatan_sebelum_ppn",
+					"total_pb1",
+					"total_uang_diterima",
+					"total_voucher",
+					"dpp_ps",
+					"tax_ps",
+					"pph_ps",
+					"pengembalian",
+					"status_proses_bulanan",
+					"status",
+					"dpp_aktual",
+					"selisih",
+					"total_terima_bulanan"
+				],
+				"filters": null
+			}
+		]
+	},
+	"destination": {
+		"database_id": "dtb-mcd3w6o1-08b853",
+		"configs": [
+			{
+				"order": 1,
+				"table": "master_unit_telp_detail",
+				"columns": [
+					"kode_unit",
+					"kode_pemilik_penyewa",
+					"no_telp",
+					"desc",
+					"type_pakai",
+					"status",
+					"seq"
+				],
+				"init_value": "src.master_unit_telp_detail",
+				"transforms": null
+			},
+			{
+				"order": 2,
+				"table": "master_bisnis_unit",
+				"columns": ["kode_bu", "nama_bu", "desc"],
+				"init_value": "src.master_bisnis_unit",
+				"transforms": null
+			},
+			{
+				"order": 3,
+				"table": "master_acc",
+				"columns": ["kode", "tipe", "desc", "group"],
+				"init_value": "src.master_acc",
+				"transforms": null
+			},
+			{
+				"order": 4,
+				"table": "ar_profitsharing_daily",
+				"columns": [
+					"profitsharing_daily_id",
+					"date",
+					"contract_id",
+					"kode_unit",
+					"create_by",
+					"create_date",
+					"omzet",
+					"pendapatan_tanpa_ppn",
+					"pendapatan_kena_ppn",
+					"discount",
+					"pendapatan_sebelum_ppn",
+					"pb1",
+					"uang_diterima",
+					"voucher",
+					"ps_header",
+					"status"
+				],
+				"init_value": "src.ar_profitsharing_daily",
+				"transforms": null
+			},
+			{
+				"order": 5,
+				"table": "ar_profitsharing_header",
+				"columns": [
+					"trans_ps_id",
+					"tanggal",
+					"awal",
+					"akhir",
+					"ps_id",
+					"type_bill",
+					"type_minimum",
+					"minimum_value",
+					"status_prog",
+					"status_potong_pb1",
+					"contract_id",
+					"kode_unit",
+					"desc",
+					"create_by",
+					"create_date",
+					"nilai_terbayar",
+					"desc_terbayar",
+					"total_omzet",
+					"total_pendapatan_tanpa_ppn",
+					"total_pendapatan_kena_ppn",
+					"total_discount",
+					"total_pendapatan_sebelum_ppn",
+					"total_pb1",
+					"total_uang_diterima",
+					"total_voucher",
+					"dpp_ps",
+					"tax_ps",
+					"pph_ps",
+					"pengembalian",
+					"status_proses_bulanan",
+					"status",
+					"dpp_aktual",
+					"selisih",
+					"total_terima_bulanan"
+				],
+				"init_value": "src.ar_profitsharing_header",
+				"transforms": null
+			}
+		]
+	}
+}

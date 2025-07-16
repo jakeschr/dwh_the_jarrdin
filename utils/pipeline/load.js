@@ -29,9 +29,12 @@ async function load({ database, configs, data }) {
 				switch (type) {
 					case "lake": {
 						const query =
-							`INSERT INTO ${table} (${colNames}) VALUES ` +
+							`INSERT INTO \`${table}\` (${colNames
+								.map((col) => `\`${col}\``)
+								.join(", ")}) VALUES ` +
 							batch.map(() => placeholders).join(", ");
 						await connection.query(query, values);
+
 						break;
 					}
 
@@ -54,10 +57,16 @@ async function load({ database, configs, data }) {
 						}
 
 						const query =
-							`INSERT INTO ${table} (${colNames}) VALUES ` +
+							`INSERT INTO \`${table}\` (${colNames
+								.map((col) => `\`${col}\``)
+								.join(", ")}) VALUES ` +
 							batch.map(() => placeholders).join(", ") +
-							` ON DUPLICATE KEY UPDATE ${updateSet}`;
+							` ON DUPLICATE KEY UPDATE ${colNames
+								.map((col) => `\`${col}\`=VALUES(\`${col}\`)`)
+								.join(", ")}`;
+
 						await connection.query(query, values);
+
 						break;
 					}
 
