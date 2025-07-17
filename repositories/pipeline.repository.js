@@ -110,11 +110,11 @@ class PipelineRepository {
 					description: row.description,
 					source: {
 						database: row.src_db,
-						configs: JSON.parse(row.src_configs),
+						configs: row.src_configs,
 					},
 					destination: {
 						database: row.dst_db,
-						configs: JSON.parse(row.dst_configs),
+						configs: row.dst_configs,
 					},
 					timestamp: timeHandler.epochToString(row.timestamp),
 				};
@@ -198,10 +198,10 @@ class PipelineRepository {
 							dsn: row.src_db.dsn,
 							schema: row.src_db.schema,
 							connection_uri: row.src_db.connection_uri,
-							options: JSON.parse(row.src_db.options),
+							options: row.src_db.options,
 							type: row.src_db.type,
 						},
-						configs: JSON.parse(row.src_configs),
+						configs: row.src_configs,
 					},
 					destination: {
 						database: {
@@ -217,10 +217,10 @@ class PipelineRepository {
 							dsn: row.dst_db.dsn,
 							schema: row.dst_db.schema,
 							connection_uri: row.dst_db.connection_uri,
-							options: JSON.parse(row.dst_db.options),
+							options: row.dst_db.options,
 							type: row.dst_db.type,
 						},
-						configs: JSON.parse(row.dst_configs),
+						configs: row.dst_configs,
 					},
 				};
 			};
