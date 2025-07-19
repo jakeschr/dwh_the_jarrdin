@@ -1,13 +1,21 @@
 const { timeHandler } = require("../time-handler.util");
 
+function quoteIdentifier(identifier, dialect) {
+	if (dialect === "mysql") return `\`${identifier}\``;
+	if (dialect === "postgres") return `"${identifier}"`;
+	if (dialect === "sqlserver" || dialect === "sybase") return `[${identifier}]`;
+	return identifier; // fallback
+}
+
 async function extract({ database, configs, time_threshold }) {
 	const results = {};
 	const { connection, dialect, driver } = database;
 
 	for (const config of configs) {
-		try {
-			results[table] = { data: [], error: [] };
+		const table = config.table;
+		results[table] = { data: [], error: [] };
 
+		try {
 			const query = buildQuery(config, time_threshold, dialect);
 
 			let extractedData;
@@ -32,7 +40,8 @@ async function extract({ database, configs, time_threshold }) {
 						extractedData = res.rows;
 						break;
 					}
-					case "sqlserver": {
+					case "sqlserver":
+					case "sybase": {
 						const res = await connection.request().query(query);
 						extractedData = res.recordset;
 						break;
@@ -44,9 +53,16 @@ async function extract({ database, configs, time_threshold }) {
 				throw new Error("Unsupported driver:", driver);
 			}
 
-			results[table].data.push(...extractedData);
+			if (Array.isArray(extractedData)) {
+				results[table].data = results[table].data.concat(extractedData);
+			} else {
+				results[table].error.push(
+					new Error(`Invalid data extracted for table: ${table}`)
+				);
+			}
 		} catch (error) {
 			results[table].error.push(error);
+			console.error(error);
 		}
 	}
 
@@ -59,9 +75,7 @@ function buildQuery(config, time_threshold, dialect) {
 
 		let whereClause = "";
 		if (Array.isArray(filters) && filters.length > 0) {
-			// Setiap objek di filters adalah AND
 			const andGroups = filters.map((filter) => {
-				// Setiap kolom dalam satu objek dianggap OR
 				const orGroup = filter.columns.map((column) => {
 					const singleFilter = {
 						column: column,
@@ -76,8 +90,13 @@ function buildQuery(config, time_threshold, dialect) {
 			whereClause = `WHERE ${andGroups.join(" AND ")}`;
 		}
 
-		const selectColumns = columns.join(", ");
-		const baseQuery = `SELECT ${selectColumns} FROM ${table} ${whereClause}`;
+		const selectColumns = columns
+			.map((col) => quoteIdentifier(col, dialect))
+			.join(", ");
+		const baseQuery = `SELECT ${selectColumns} FROM ${quoteIdentifier(
+			table,
+			dialect
+		)} ${whereClause}`;
 
 		return baseQuery;
 	} catch (error) {
@@ -88,14 +107,10 @@ function buildQuery(config, time_threshold, dialect) {
 function buildFilter(filter, time_threshold, dialect) {
 	try {
 		let { column, operator, value } = filter;
-		const colExpr = column;
+		const colExpr = quoteIdentifier(column, dialect);
 
-		// 1. Jika value adalah objek dinamis
 		if (typeof value === "object" && value?.source === "time_threshold") {
-			// Tentukan nilai default
 			const defaultVal = value.default;
-
-			// Jika time_threshold tersedia, gunakan sesuai format default
 			if (time_threshold != null) {
 				const format = timeHandler.getFormat(defaultVal);
 				if (format === "epoch_ms") {
@@ -106,12 +121,10 @@ function buildFilter(filter, time_threshold, dialect) {
 					value = timeHandler.epochToString(time_threshold, format);
 				}
 			} else {
-				// Gunakan nilai default langsung
 				value = defaultVal;
 			}
 		}
 
-		// 2. Format value untuk SQL (kecuali untuk BETWEEN/IN yang nanti ditangani khusus)
 		let formattedVal = value;
 		if (typeof value === "string") {
 			formattedVal = `'${value}'`;
@@ -119,7 +132,6 @@ function buildFilter(filter, time_threshold, dialect) {
 			formattedVal = "NULL";
 		}
 
-		// 3. Bangun filter SQL
 		switch (operator) {
 			case "eq":
 				return `${colExpr} = ${formattedVal}`;
@@ -146,14 +158,23 @@ function buildFilter(filter, time_threshold, dialect) {
 			case "not":
 				return `${colExpr} IS NOT ${formattedVal}`;
 			case "in":
+				if (!Array.isArray(value))
+					throw new Error(`'in' operator requires array value`);
 				return `${colExpr} IN (${value.map((v) => `'${v}'`).join(", ")})`;
 			case "not_in":
+				if (!Array.isArray(value))
+					throw new Error(`'not_in' operator requires array value`);
 				return `${colExpr} NOT IN (${value.map((v) => `'${v}'`).join(", ")})`;
 			case "between":
+				if (!Array.isArray(value) || value.length !== 2)
+					throw new Error(`'between' operator requires [start, end] array`);
 				return `${colExpr} BETWEEN '${value[0]}' AND '${value[1]}'`;
 			case "not_between":
+				if (!Array.isArray(value) || value.length !== 2)
+					throw new Error(`'not_between' operator requires [start, end] array`);
 				return `${colExpr} NOT BETWEEN '${value[0]}' AND '${value[1]}'`;
 			default:
+				throw new Error(`Unsupported operator: ${operator}`);
 		}
 	} catch (error) {
 		throw error;

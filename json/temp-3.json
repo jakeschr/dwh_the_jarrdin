@@ -1,75 +1,98 @@
-{
-	"database_id": "dtb-mc7poch1-ae4ba3",
-	"tables": [
-		{
-			"name": "apartment",
-			"pk": ["apartment_id", "load_timestamp"],
-			"columns": [
-				{ "name": "apartment_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "tower", "type": "VARCHAR(20)", "null": false },
-				{ "name": "floor", "type": "VARCHAR(20)", "null": false },
-				{ "name": "unit", "type": "VARCHAR(20)", "null": false },
-				{ "name": "type", "type": "VARCHAR(20)", "null": false },
-				{ "name": "area", "type": "INT(11)", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
-				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
-			]
-		},
-		{
-			"name": "occupant",
-			"pk": ["occupant_id", "load_timestamp"],
-			"columns": [
-				{ "name": "occupant_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "name", "type": "VARCHAR(200)", "null": false },
-				{ "name": "email", "type": "VARCHAR(200)", "null": false },
-				{ "name": "phone", "type": "VARCHAR(20)", "null": false },
-				{ "name": "address", "type": "TEXT", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
-				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
-			]
-		},
-		{
-			"name": "contract",
-			"pk": ["contract_id", "load_timestamp"],
-			"columns": [
-				{ "name": "contract_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "apartment_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "occupant_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "start_date", "type": "DATE", "null": false },
-				{ "name": "end_date", "type": "DATE", "null": false },
-				{ "name": "amount", "type": "DOUBLE", "null": false },
-				{ "name": "type", "type": "VARCHAR(50)", "null": false },
-				{ "name": "status", "type": "VARCHAR(50)", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
-				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
-			]
-		},
-		{
-			"name": "invoice",
-			"pk": ["invoice_id", "load_timestamp"],
-			"columns": [
-				{ "name": "invoice_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "contract_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "due_date", "type": "DATE", "null": false },
-				{ "name": "amount", "type": "DOUBLE", "null": false },
-				{ "name": "type", "type": "VARCHAR(50)", "null": false },
-				{ "name": "status", "type": "VARCHAR(50)", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
-				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
-			]
-		},
-		{
-			"name": "payment",
-			"pk": ["payment_id", "load_timestamp"],
-			"columns": [
-				{ "name": "payment_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "invoice_id", "type": "VARCHAR(50)", "null": false },
-				{ "name": "payment_date", "type": "DATE", "null": false },
-				{ "name": "payment_amount", "type": "DOUBLE", "null": false },
-				{ "name": "payment_method", "type": "VARCHAR(50)", "null": false },
-				{ "name": "timestamp", "type": "BIGINT(20)", "null": false },
-				{ "name": "load_timestamp", "type": "BIGINT(20)", "null": false }
-			]
-		}
-	]
-}
+[
+	{
+		"name": "trans_po",
+		"columns": [
+			"po_id",
+			"po_date",
+			"po_create",
+			"kode_user",
+			"supplier_id",
+			"status_kirim",
+			"cabang_id",
+			"status_posting",
+			"pr_id",
+			"remark",
+			"jenis",
+			"dpp",
+			"ppn",
+			"discount",
+			"total",
+			"status_tax",
+			"order",
+			"term",
+			"account",
+			"reff",
+			"status_barang",
+			"status_approval1",
+			"status_approval2",
+			"status_approval3",
+			"approval1_by",
+			"approval2_by",
+			"approval3_by",
+			"approval1_at",
+			"approval2_at",
+			"approval3_at",
+			"rate_ppn"
+		]
+	},
+	{
+		"name": "tr_keluhan",
+		"columns": [
+			"pk_id",
+			"pk_date",
+			"pk_time",
+			"created_by",
+			"received_by",
+			"request_by",
+			"request_name",
+			"location",
+			"phone",
+			"kontak_pelanggan",
+			"kategori",
+			"jenis_keluhan",
+			"tindakan",
+			"forward_to",
+			"wo_status",
+			"wo_id",
+			"status_pk",
+			"notes",
+			"check",
+			"checked_by",
+			"unit_id",
+			"contract_id",
+			"wr_id",
+			"status",
+			"wr_date",
+			"checked_date",
+			"checked_time",
+			"Checked_notes",
+			"status_wo",
+			"asset_id",
+			"status_paid",
+			"status_check",
+			"total",
+			"create_date",
+			"create_by",
+			"start_date",
+			"finish_date",
+			"start_time",
+			"finish_time",
+			"handle_by",
+			"schedule_date_start",
+			"schedule_time_start",
+			"sla",
+			"priority",
+			"no_inv",
+			"pm_id",
+			"assets_id",
+			"keterangan",
+			"keterangan2",
+			"schedule_date_end",
+			"schedule_time_end",
+			"status_wo_selesai",
+			"status_wr",
+			"housekeeping",
+			"wo_created"
+		]
+	}
+]

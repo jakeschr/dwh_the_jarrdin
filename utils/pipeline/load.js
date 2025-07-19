@@ -22,14 +22,13 @@ async function load({ database, configs, data }) {
 
 		for (const batch of batches) {
 			try {
-				const colNames = columns.join(", ");
 				const placeholders = "(" + columns.map(() => "?").join(", ") + ")";
 				const values = batch.flatMap((row) => columns.map((col) => row[col]));
 
 				switch (type) {
 					case "lake": {
 						const query =
-							`INSERT INTO \`${table}\` (${colNames
+							`INSERT INTO \`${table}\` (${columns
 								.map((col) => `\`${col}\``)
 								.join(", ")}) VALUES ` +
 							batch.map(() => placeholders).join(", ");
@@ -57,11 +56,11 @@ async function load({ database, configs, data }) {
 						}
 
 						const query =
-							`INSERT INTO \`${table}\` (${colNames
+							`INSERT INTO \`${table}\` (${columns
 								.map((col) => `\`${col}\``)
 								.join(", ")}) VALUES ` +
 							batch.map(() => placeholders).join(", ") +
-							` ON DUPLICATE KEY UPDATE ${colNames
+							` ON DUPLICATE KEY UPDATE ${columns
 								.map((col) => `\`${col}\`=VALUES(\`${col}\`)`)
 								.join(", ")}`;
 

@@ -1,207 +1,112 @@
 {
-	"pipeline_id": "pln-mc7prhxu-739866",
-	"name": "OPT (sybase) to LAKE (mysql)",
-	"description": null,
+	"pipeline_id": "pln-md6xf5ne-b5fdd5",
+	"name": "Vinco to LAKE (14)",
+	"description": "ERROR: ODBC memory allocation error saat extract. SOLUSI: Uji kembali query dengan limit kecil, cek setting memory ODBC client/server",
 	"source": {
-		"database_id": "dtb-mc3dxk88-f528a9",
+		"database_id": "dtb-mcd4f26p-37a639",
 		"configs": [
 			{
-				"table": "apartment",
+				"table": "master_pemilik_penyewa",
 				"columns": [
-					"apartment_id",
-					"tower",
-					"floor",
-					"unit",
-					"area",
-					"timestamp"
-				],
-				"filters": [
-					{
-						"columns": ["timestamp"],
-						"operator": "gte",
-						"value": {
-							"source": "time_threshold",
-							"default": 1735689600000
-						}
-					}
-				]
-			},
-			{
-				"table": "occupant",
-				"columns": [
-					"occupant_id",
-					"name",
+					"kode_pemilik_penyewa",
+					"nama_pemilik_penyewa",
+					"alamat_pemilik_penyewa",
+					"kota_pemilik_penyewa",
+					"provinsi_pemilik_penyewa",
+					"kode_pos",
+					"no_telp",
+					"no_fax",
+					"no_ponsel",
+					"nama_pt",
+					"alamat_pt",
+					"kota_pt",
+					"no_telp_pt",
+					"no_fax_pt",
 					"email",
-					"phone",
-					"address",
-					"timestamp"
+					"kode_tt",
+					"bank",
+					"status_ppn",
+					"status_potong_pph",
+					"status_pkp",
+					"npwp",
+					"pkp_nama",
+					"pkp_alamat",
+					"status_proforma",
+					"bank_tagihan",
+					"bank_cabang",
+					"bank_no_acc",
+					"nama_usaha",
+					"bill_to",
+					"id_card",
+					"dob",
+					"country_id",
+					"religion",
+					"paspor",
+					"paspor_exp",
+					"kitas",
+					"kitas_exp",
+					"stm",
+					"stm_exp",
+					"imta",
+					"imta_exp",
+					"id_card_exp"
 				],
-				"filters": [
-					{
-						"columns": ["timestamp"],
-						"operator": "gte",
-						"value": {
-							"source": "time_threshold",
-							"default": 1735689600000
-						}
-					}
-				]
-			},
-			{
-				"table": "contract",
-				"columns": [
-					"contract_id",
-					"apartment_id",
-					"occupant_id",
-					"start_date",
-					"end_date",
-					"amount",
-					"type",
-					"status",
-					"timestamp"
-				],
-				"filters": [
-					{
-						"columns": ["timestamp"],
-						"operator": "gte",
-						"value": {
-							"source": "time_threshold",
-							"default": 1735689600000
-						}
-					}
-				]
-			},
-			{
-				"table": "invoice",
-				"columns": [
-					"invoice_id",
-					"contract_id",
-					"due_date",
-					"amount",
-					"type",
-					"status",
-					"timestamp"
-				],
-				"filters": [
-					{
-						"columns": ["timestamp"],
-						"operator": "gte",
-						"value": {
-							"source": "time_threshold",
-							"default": 1735689600000
-						}
-					}
-				]
-			},
-			{
-				"table": "payment",
-				"columns": [
-					"payment_id",
-					"invoice_id",
-					"payment_date",
-					"payment_amount",
-					"payment_method",
-					"timestamp"
-				],
-				"filters": [
-					{
-						"columns": ["timestamp"],
-						"operator": "gte",
-						"value": {
-							"source": "time_threshold",
-							"default": 1735689600000
-						}
-					}
-				]
+				"filters": null
 			}
 		]
 	},
 	"destination": {
-		"database_id": "dtb-mc7poch1-ae4ba3",
+		"database_id": "dtb-mcd3w6o1-08b853",
 		"configs": [
 			{
-				"table": "apartment",
-				"columns": ["apartment_id", "tower", "floor", "unit", "area", "timestamp"],
-				"init_value": "src.apartment",
 				"order": 1,
+				"table": "master_pemilik_penyewa",
+				"columns": [
+					"kode_pemilik_penyewa",
+					"nama_pemilik_penyewa",
+					"alamat_pemilik_penyewa",
+					"kota_pemilik_penyewa",
+					"provinsi_pemilik_penyewa",
+					"kode_pos",
+					"no_telp",
+					"no_fax",
+					"no_ponsel",
+					"nama_pt",
+					"alamat_pt",
+					"kota_pt",
+					"no_telp_pt",
+					"no_fax_pt",
+					"email",
+					"kode_tt",
+					"bank",
+					"status_ppn",
+					"status_potong_pph",
+					"status_pkp",
+					"npwp",
+					"pkp_nama",
+					"pkp_alamat",
+					"status_proforma",
+					"bank_tagihan",
+					"bank_cabang",
+					"bank_no_acc",
+					"nama_usaha",
+					"bill_to",
+					"id_card",
+					"dob",
+					"country_id",
+					"religion",
+					"paspor",
+					"paspor_exp",
+					"kitas",
+					"kitas_exp",
+					"stm",
+					"stm_exp",
+					"imta",
+					"imta_exp",
+					"id_card_exp"
+				],
+				"init_value": "src.master_pemilik_penyewa",
 				"transforms": null
-			},
-			{
-				"table": "occupant",
-				"columns": ["occupant_id", "name", "email", "phone", "address", "timestamp"],
-				"init_value": "src.occupant",
-				"order": 2,
-				"transforms": null
-			},
-			{
-				"table": "contract",
-				"columns": [
-					"contract_id",
-					"apartment_id",
-					"occupant_id",
-					"start_date",
-					"end_date",
-					"amount",
-					"type",
-					"status",
-					"timestamp"
-				],
-				"init_value": "src.contract",
-				"order": 3,
-				"transforms": [
-					{
-						"type": "time-format",
-						"columns": ["start_date", "end_date"],
-						"old_format": "YYYY-MM-DD",
-						"new_format": "YYYY-MM-DD",
-						"order": 1
-					}
-				]
-			},
-			{
-				"table": "invoice",
-				"columns": [
-					"invoice_id",
-					"contract_id",
-					"due_date",
-					"amount",
-					"type",
-					"status",
-					"timestamp"
-				],
-				"init_value": "src.invoice",
-				"order": 4,
-				"transforms": [
-					{
-						"type": "time-format",
-						"columns": ["due_date"],
-						"old_format": "YYYY-MM-DD",
-						"new_format": "YYYY-MM-DD",
-						"order": 1
-					}
-				]
-			},
-			{
-				"table": "payment",
-				"columns": [
-					"payment_id",
-					"invoice_id",
-					"payment_date",
-					"payment_amount",
-					"payment_method",
-					"timestamp"
-				],
-				"init_value": "src.payment",
-				"order": 5,
-				"transforms": [
-					{
-						"type": "time-format",
-						"columns": ["payment_date"],
-						"old_format": "YYYY-MM-DD",
-						"new_format": "YYYY-MM-DD",
-						"order": 1
-					}
-				]
 			}
 		]
 	}

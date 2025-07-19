@@ -93,10 +93,10 @@ function buildLog(name, result) {
 	let status = "error";
 	if (dataLength > 0 && errorLength > 0) {
 		status = "partial";
-	} else if (dataLength > 0 && errorLength === 0) {
+	} else if (dataLength >= 0 && errorLength === 0) {
 		status = "success";
 	}
-
+	
 	return {
 		status: status,
 		name: name,
