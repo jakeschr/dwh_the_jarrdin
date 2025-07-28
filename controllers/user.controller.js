@@ -3,6 +3,33 @@ const { responseHandler } = require("../utils/response-handler.util.js");
 const { UserService } = require("../services/user.service.js");
 
 class UserController {
+	async pageSignin(req, res) {
+		try {
+			res.render("signin", {
+				layout: "main",
+				title: "Signin",
+				style: "signin.css",
+				script: "signin.js",
+			});
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	async pageUser(req, res) {
+		try {
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	async pageUserDetail(req, res) {
+		try {
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	async findSummary(req, res) {
 		try {
 			let result;

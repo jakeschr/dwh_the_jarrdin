@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Neumorphic Dark Sign In</title>
+		<style>
+			body {
+				margin: 0;
+				font-family: "Segoe UI", sans-serif;
+				background: #1e1e1e;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 100vh;
+				color: #fff;
+			}
+
+			.neumorphic-dark {
+				background: #1e1e1e;
+				box-shadow: 12px 12px 24px #141414, -12px -12px 24px #282828;
+				border-radius: 20px;
+				padding: 40px 30px;
+				width: 320px;
+				text-align: center;
+			}
+
+			.neumorphic-dark h2 {
+				margin-bottom: 30px;
+				color: #e0e0e0;
+			}
+
+			.dark-input {
+				width: 100%;
+				padding: 15px;
+				margin-bottom: 20px;
+				border: none;
+				border-radius: 12px;
+				background: #1e1e1e;
+				box-shadow: inset 6px 6px 12px #141414, inset -6px -6px 12px #282828;
+				color: #eee;
+				font-size: 16px;
+				outline: none;
+			}
+
+			.dark-button {
+				width: 100%;
+				padding: 15px;
+				border: none;
+				border-radius: 12px;
+				background: #1e1e1e;
+				box-shadow: 6px 6px 12px #141414, -6px -6px 12px #282828;
+				font-size: 16px;
+				font-weight: bold;
+				color: #eee;
+				cursor: pointer;
+				transition: all 0.2s ease-in-out;
+			}
+
+			.dark-button:active {
+				box-shadow: inset 4px 4px 10px #141414, inset -4px -4px 10px #282828;
+			}
+
+			.dark-footer {
+				margin-top: 15px;
+				font-size: 14px;
+				color: #aaa;
+			}
+
+			.dark-footer a {
+				color: #999;
+				text-decoration: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="neumorphic-dark">
+			<h2>Sign In</h2>
+			<form>
+				<input type="email" class="dark-input" placeholder="Email" required />
+				<input
+					type="password"
+					class="dark-input"
+					placeholder="Password"
+					required />
+				<button type="submit" class="dark-button">Login</button>
+			</form>
+			<div class="dark-footer">
+				Don't have an account? <a href="#">Register</a>
+			</div>
+		</div>
+	</body>
+</html>

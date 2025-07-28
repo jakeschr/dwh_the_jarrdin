@@ -6,6 +6,7 @@ const databaseRoute = require("./database.route");
 const pipelineRoute = require("./pipeline.route");
 const jobRoute = require("./job.route");
 const logRoute = require("./log.route");
+const pageRoute = require("./page.route");
 
 router.get("/", (req, res) => {
 	res.status(200).json("Wellcome to Website Content Generator APIs");
@@ -16,5 +17,6 @@ router.use("/api", databaseRoute);
 router.use("/api", pipelineRoute);
 router.use("/api", jobRoute);
 router.use("/api", logRoute);
+router.use("/page", pageRoute);
 
 module.exports = { router };
