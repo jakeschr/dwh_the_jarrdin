@@ -28,27 +28,17 @@
 				<nav class="nav">
 					<div class="logo">Data Warehouse</div>
 					<ul class="nav-links">
-						<li>
-							<a href="/page/dashboard">Dashboard</a>
-						</li>
-						<li>
-							<a href="/page/database">Database</a>
-						</li>
-						<li>
-							<a href="/page/pipeline">Pipeline</a>
-						</li>
-						<li>
-							<a href="/page/job">Job</a>
-						</li>
-						<li>
-							<a href="/page/user">User</a>
-						</li>
-						<li>
-							<a href="/page/log">Log</a>
-						</li>
-						<li>
-							<a href="/page/profile">Profile</a>
-						</li>
+						<% if (typeof session !== 'undefined') { %>
+						<li><a href="/page/dashboard">Dashboard</a></li>
+						<li><a href="/page/database">Database</a></li>
+						<li><a href="/page/pipeline">Pipeline</a></li>
+						<li><a href="/page/job">Job</a></li>
+						<li><a href="/page/user">User</a></li>
+						<li><a href="/page/log">Log</a></li>
+						<li><a href="/page/profile">Profile</a></li>
+						<% } else { %>
+						<li><a href="/page/signin">Sign In</a></li>
+						<% } %>
 					</ul>
 				</nav>
 			</header>

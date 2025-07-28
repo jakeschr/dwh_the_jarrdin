@@ -27,6 +27,7 @@ class PageController {
 				title: "Dashboard",
 				style: "dashboard.css",
 				script: "dashboard.js",
+				session: req.user,
 			});
 		} catch (error) {
 			console.error(error);
