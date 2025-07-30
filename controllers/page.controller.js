@@ -14,6 +14,7 @@ class PageController {
 				title: "Signin",
 				style: "signin.css",
 				script: "signin.js",
+				session: req.user,
 			});
 		} catch (error) {
 			console.error(error);
@@ -41,6 +42,7 @@ class PageController {
 				title: "Database",
 				style: "database.css",
 				script: "database.js",
+				session: req.user,
 			});
 		} catch (error) {
 			console.error(error);
@@ -54,6 +56,7 @@ class PageController {
 				title: "Pipeline",
 				style: "pipeline.css",
 				script: "pipeline.js",
+				session: req.user,
 			});
 		} catch (error) {
 			console.error(error);
@@ -67,6 +70,7 @@ class PageController {
 				title: "Job",
 				style: "job.css",
 				script: "job.js",
+				session: req.user,
 			});
 		} catch (error) {
 			console.error(error);
@@ -80,6 +84,7 @@ class PageController {
 				title: "Log",
 				style: "log.css",
 				script: "log.js",
+				session: req.user,
 			});
 		} catch (error) {
 			console.error(error);
@@ -93,6 +98,7 @@ class PageController {
 				title: "User",
 				style: "user.css",
 				script: "user.js",
+				session: req.user,
 			});
 		} catch (error) {
 			console.error(error);
@@ -106,6 +112,7 @@ class PageController {
 				title: "Profile",
 				style: "profile.css",
 				script: "profile.js",
+				session: req.user,
 			});
 		} catch (error) {
 			console.error(error);
