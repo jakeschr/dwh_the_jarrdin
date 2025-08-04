@@ -15,14 +15,6 @@ const authorization = async (req, res, next) => {
 
 		// Jika tidak login
 		if (!user) {
-				console.log("masuk");
-			// if (req.path.startsWith("/page")) {
-
-			// 	// Jika akses ke /page tanpa login, redirect ke login
-			// 	return res.redirect("/page/signin");
-			// }
-
-			// Jika akses ke endpoint selain /page, kirim respons JSON 401
 			return responseHandler(res, {
 				code: 401,
 				errors: "Unauthorized. Please signin.",
