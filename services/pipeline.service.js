@@ -1,11 +1,7 @@
 const { PipelineRepository } = require("../repositories/pipeline.repository");
-const {
-	DatabaseRepository,
-} = require("../repositories/database.repository.js");
 const { LogRepository } = require("../repositories/log.repository.js");
 
 const { runETL } = require("../utils/pipeline/run-etl.js");
-const { timeHandler } = require("../utils/time-handler.util.js");
 const { filterHandler } = require("../utils/filter-handler.util.js");
 const { Connection } = require("../models/index.js");
 
@@ -39,16 +35,7 @@ class PipelineService {
 		try {
 			dbTrx = await Connection.transaction();
 
-			const pipeline = {
-				name: data.name,
-				description: data.description,
-				src_database_id: data.source.database_id,
-				src_configs: data.source.configs,
-				dst_database_id: data.destination.database_id,
-				dst_configs: data.destination.configs,
-			};
-
-			const createdRow = await PipelineRepository.create(pipeline, dbTrx);
+			const createdRow = await PipelineRepository.create(data, dbTrx);
 
 			// await LogRepository.create(
 			// 	{
@@ -73,17 +60,7 @@ class PipelineService {
 		try {
 			dbTrx = await Connection.transaction();
 
-			const pipeline = {
-				pipeline_id: data.pipeline_id,
-				name: data?.name,
-				description: data?.description,
-				src_database_id: data?.source?.database_id,
-				src_configs: data?.source?.configs,
-				dst_database_id: data?.destination?.database_id,
-				dst_configs: data?.destination?.configs,
-			};
-
-			const updatedRow = await PipelineRepository.update(pipeline, dbTrx);
+			const updatedRow = await PipelineRepository.update(data, dbTrx);
 
 			// await LogRepository.create(
 			// 	{
@@ -96,7 +73,7 @@ class PipelineService {
 
 			await dbTrx.commit();
 
-			return await PipelineRepository.findOne(pipeline.pipeline_id);
+			return await PipelineRepository.findOne(updatedRow.pipeline_id);
 		} catch (error) {
 			if (dbTrx) await dbTrx.rollback();
 			throw error;

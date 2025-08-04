@@ -108,14 +108,9 @@ class PipelineRepository {
 					pipeline_id: row.pipeline_id,
 					name: row.name,
 					description: row.description,
-					source: {
-						database: row.src_db,
-						configs: row.src_configs,
-					},
-					destination: {
-						database: row.dst_db,
-						configs: row.dst_configs,
-					},
+					src_db: row.src_db,
+					dst_db: row.dst_db,
+					pipelines: row.pipelines,
 					timestamp: timeHandler.epochToString(row.timestamp),
 				};
 			};
@@ -184,44 +179,9 @@ class PipelineRepository {
 				return {
 					pipeline_id: row.pipeline_id,
 					name: row.name,
-					source: {
-						database: {
-							database_id: row.src_db.database_id,
-							label: row.src_db.label,
-							database: row.src_db.database,
-							dialect: row.src_db.dialect,
-							host: row.src_db.host,
-							port: row.src_db.port,
-							username: row.src_db.username,
-							password: row.src_db.password,
-							driver: row.src_db.driver,
-							dsn: row.src_db.dsn,
-							schema: row.src_db.schema,
-							connection_uri: row.src_db.connection_uri,
-							options: row.src_db.options,
-							type: row.src_db.type,
-						},
-						configs: row.src_configs,
-					},
-					destination: {
-						database: {
-							database_id: row.dst_db.database_id,
-							label: row.dst_db.label,
-							database: row.dst_db.database,
-							dialect: row.dst_db.dialect,
-							host: row.dst_db.host,
-							port: row.dst_db.port,
-							username: row.dst_db.username,
-							password: row.dst_db.password,
-							driver: row.dst_db.driver,
-							dsn: row.dst_db.dsn,
-							schema: row.dst_db.schema,
-							connection_uri: row.dst_db.connection_uri,
-							options: row.dst_db.options,
-							type: row.dst_db.type,
-						},
-						configs: row.dst_configs,
-					},
+					src_db: row.src_db,
+					dst_db: row.dst_db,
+					pipelines: row.pipelines,
 				};
 			};
 

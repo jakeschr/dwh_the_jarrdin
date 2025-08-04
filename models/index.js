@@ -42,14 +42,6 @@ db.PipelineModel = require("./pipeline.model")({
 	DatabaseModel: db.DatabaseModel,
 });
 
-// PipelineV2
-db.PipelineV2Model = require("./pipeline_v2.model")({
-	GenerateID: GenerateID,
-	Connection: Connection,
-	DataTypes: DataTypes,
-	DatabaseModel: db.DatabaseModel,
-});
-
 // Job
 db.JobModel = require("./job.model")({
 	GenerateID: GenerateID,

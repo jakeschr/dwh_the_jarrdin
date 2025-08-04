@@ -9,7 +9,6 @@ router.get(
 	authorization, //
 	PipelineController.execute
 );
-
 router.get(
 	"/:version/pipeline",
 	authorization, //
