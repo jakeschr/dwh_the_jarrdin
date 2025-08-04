@@ -2,15 +2,8 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
-const expressLayouts = require("express-ejs-layouts");
-const path = require("path");
 
 const app = express();
-
-const staticPathPublic = path.resolve("public");
-app.set("view engine", "ejs");
-app.use(express.static(staticPathPublic));
-app.use(expressLayouts);
 
 dotenv.config();
 
