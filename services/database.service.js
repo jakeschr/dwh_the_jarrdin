@@ -30,6 +30,8 @@ class DatabaseService {
 							);
 						}
 
+						// console.log(result);
+
 						const connection = await queryHandler.openConnection(result);
 
 						result.tables = await queryHandler.databaseInfo(

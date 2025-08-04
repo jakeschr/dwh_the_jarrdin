@@ -55,11 +55,16 @@ const pipelineSchema = {
 			pipelines: Joi.array()
 				.items(
 					Joi.object({
-						name: Joi.string().max(50).required().messages({
-							"string.base": `'name' must be a string.`,
-							"string.max": `'name' must not exceed 50 characters.`,
-							"any.required": `'name' is required.`,
-						}),
+						name: Joi.string()
+							.pattern(/^[^\s]+$/)
+							.max(50)
+							.required()
+							.messages({
+								"string.base": `'name' must be a string.`,
+								"string.max": `'name' must not exceed 50 characters.`,
+								"string.pattern.base": `'name' must not contain spaces.`,
+								"any.required": `'name' is required.`,
+							}),
 						sql: Joi.string().max(1000).required().messages({
 							"string.base": `'sql' must be a string.`,
 							"string.max": `'sql' must not exceed 1000 characters.`,
@@ -80,12 +85,25 @@ const pipelineSchema = {
 						}),
 					})
 				)
+				.custom((value, helpers) => {
+					const names = value.map((p) => p.name);
+					const duplicates = names.filter(
+						(name, idx) => names.indexOf(name) !== idx
+					);
+					if (duplicates.length > 0) {
+						return helpers.error("array.duplicatePipelineName", {
+							name: duplicates[0],
+						});
+					}
+					return value;
+				})
 				.min(2)
 				.required()
 				.messages({
 					"array.base": `'pipelines' must be an array.`,
 					"array.min": `'pipelines' must contain at least 2 pipelines.`,
 					"any.required": `'pipelines' is required.`,
+					"array.duplicatePipelineName": `'pipelines' contains duplicate name '{{#name}}'. Each pipeline name must be unique.`,
 				}),
 		})
 			.required()
@@ -123,11 +141,16 @@ const pipelineSchema = {
 			pipelines: Joi.array()
 				.items(
 					Joi.object({
-						name: Joi.string().max(50).required().messages({
-							"string.base": `'name' must be a string.`,
-							"string.max": `'name' must not exceed 50 characters.`,
-							"any.required": `'name' is required.`,
-						}),
+						name: Joi.string()
+							.pattern(/^[^\s]+$/)
+							.max(50)
+							.required()
+							.messages({
+								"string.base": `'name' must be a string.`,
+								"string.max": `'name' must not exceed 50 characters.`,
+								"string.pattern.base": `'name' must not contain spaces.`,
+								"any.required": `'name' is required.`,
+							}),
 						sql: Joi.string().max(1000).required().messages({
 							"string.base": `'sql' must be a string.`,
 							"string.max": `'sql' must not exceed 1000 characters.`,
@@ -148,6 +171,18 @@ const pipelineSchema = {
 						}),
 					})
 				)
+				.custom((value, helpers) => {
+					const names = value.map((p) => p.name);
+					const duplicates = names.filter(
+						(name, idx) => names.indexOf(name) !== idx
+					);
+					if (duplicates.length > 0) {
+						return helpers.error("array.duplicatePipelineName", {
+							name: duplicates[0],
+						});
+					}
+					return value;
+				})
 				.min(2)
 				.optional()
 				.messages({
@@ -161,6 +196,7 @@ const pipelineSchema = {
 				"object.base": `request body must be an object.`,
 				"any.required": `request body is required.`,
 				"object.missing": `'pipeline_id' and at least one field to update must be provided.`,
+				"array.duplicatePipelineName": `'pipelines' contains duplicate name '{{#name}}'. Each pipeline name must be unique.`,
 			});
 
 		return schema.validate(data, { abortEarly: false });

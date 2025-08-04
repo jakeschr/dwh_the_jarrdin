@@ -5,7 +5,7 @@ const { DatabaseController } = require("../controllers/database.controller");
 const router = express.Router();
 
 router.get(
-	"/:version/database/connection-test/:id",
+	"/:version/database/connection/:id",
 	authorization, //
 	DatabaseController.connectionTest
 );

@@ -1,0 +1,9 @@
+{
+	"src_db_id": "dtb-mc3dxk88-f528a9",
+	"dst_db_id": "dtb-mc3bgcmx-75a02a",
+	"name": "Pipeline1",
+	"description": "Testing new schema",
+	"pipelines": [{
+      
+   }]
+}
