@@ -1,4 +1,0 @@
-{
-	"ext": "js,json",
-	"ignore": ["mocks", "node_modules", "package-lock.json"]
-}
