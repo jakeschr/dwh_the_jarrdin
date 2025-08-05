@@ -9,6 +9,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"alasql": "^4.6.6",
 		"body-parser": "^1.20.3",
 		"connect-session-sequelize": "^7.1.7",
 		"cookie-parser": "^1.4.7",

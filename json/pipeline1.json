@@ -5,64 +5,33 @@
 	"description": "Testing new schema",
 	"pipelines": [
 		{
+			"type": "extract",
 			"name": "extract_occupant",
-			"sql": "SELECT occupant_id, name, email, phone, address FROM occupant",
-			"order": 1,
-			"type": "extract"
+			"sql": "SELECT occupant_id, name, email, phone, address FROM occupant WHERE timestamp >= {{since}}",
+			"context": {
+				"since": {
+					"default": 1742403536464,
+					"format": "epoch_ms"
+				}
+			},
+			"order": 1
 		},
 		{
-			"name": "extract_apartment",
-			"sql": "SELECT apartment_id, tower, floor, unit, type, area FROM apartment",
-			"order": 1,
-			"type": "extract"
+			"type": "transform",
+			"name": "transform_occupant",
+			"sql": "SELECT occupant_id, name, email, phone, address, {{now}} AS load_timestamp FROM extract_occupant",
+			"context": {
+				"now": {
+					"format": "epoch_ms"
+				}
+			},
+			"order": 2
 		},
 		{
-			"name": "extract_contract",
-			"sql": "SELECT contract_id, apartment_id, occupant_id, start_date, end_date, amount, type, status FROM contract",
-			"order": 1,
-			"type": "extract"
-		},
-		{
-			"name": "extract_invoice",
-			"sql": "SELECT invoice_id, contract_id, due_date, amount, type, status FROM invoice",
-			"order": 1,
-			"type": "extract"
-		},
-		{
-			"name": "extract_payment",
-			"sql": "SELECT payment_id, invoice_id, payment_date, payment_amount, payment_method FROM payment",
-			"order": 1,
-			"type": "extract"
-		},
-		{
-			"name": "load_occupant",
-			"sql": "INSERT INTO occupant SELECT * FROM extract_occupant",
-			"order": 2,
-			"type": "load"
-		},
-		{
-			"name": "load_apartment",
-			"sql": "INSERT INTO apartment SELECT * FROM extract_apartment",
-			"order": 3,
-			"type": "load"
-		},
-		{
-			"name": "load_contract",
-			"sql": "INSERT INTO contract SELECT * FROM extract_contract",
-			"order": 4,
-			"type": "load"
-		},
-		{
-			"name": "load_invoice",
-			"sql": "INSERT INTO invoice SELECT * FROM extract_invoice",
-			"order": 5,
-			"type": "load"
-		},
-		{
-			"name": "load_payment",
-			"sql": "INSERT INTO payment SELECT * FROM extract_payment",
-			"order": 6,
-			"type": "load"
+			"type": "load",
+			"destination": "occupant",
+			"source": "transform_occupant",
+			"order": 3
 		}
 	]
 }
